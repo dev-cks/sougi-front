@@ -14,6 +14,13 @@ body {
 .background-main {
   background: var(--main-color);
 }
+button.background-main {
+  border: solid 2px var(--main-color);
+}
+button.background-main:hover {
+  color: var(--main-color);
+  background-color: white;
+}
 
 .text-black {
   color: black !important;
