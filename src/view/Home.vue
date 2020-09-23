@@ -170,6 +170,10 @@
     flex: 1;
   }
 
+  #huhou {
+    padding-bottom: 36px;
+  }
+
   #hero {
     height: 200px;
     background-image: url('/static/images/hero.jpg');

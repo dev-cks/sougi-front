@@ -11,6 +11,7 @@ export default {
 </script>
 
 <style>
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -39,6 +40,28 @@ ul {
 }
 .btn:focus {
   outline: 0;
+}
+
+#nprogress {
+  position: fixed;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+
+  opacity: .25;
+  z-index: 1030;
+  pointer-events: auto;
+
+}
+
+#nprogress .spinner-icon {
+  width: 48px;
+  height: 48px;
+}
+
+#nprogress .spinner {
+  top: calc(50% - 24px);
+  right: calc(50% - 24px);
 }
 </style>
 
