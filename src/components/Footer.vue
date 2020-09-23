@@ -2,7 +2,7 @@
   <footer>
     <div class="container">
       <nav>
-        <ul>
+        <ul class="flex-column flex-md-row justify-content-start justify-content-md-around">
           <li >
             <a href="javascript:void(0);" @click="moveCompany()">会社案内</a>
           </li>
