@@ -57,10 +57,9 @@
             },
 
             moveNext() {
-                this.statusValue = 0;
                 console.log("Clicked");
                 let id = localStorage.getItem("sougi-current-funeral-id");
-                if(this.status == 1) {
+                if(this.statusValue == 1) {
                     this.$router.push({
                         path: '/user-info/'
                     });

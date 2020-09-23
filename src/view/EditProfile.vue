@@ -21,25 +21,47 @@
         <div class="form-group d-flex-1 align-items-center">
           <label for="email">メールアドレス</label>
           <input type="text" class="ml-3-1 form-control" id="email" v-model="email">
+          <div class="invalid-feedback d-block">
+            <span v-if="submitted && !$v.email.required">Please insert email</span>
+            <span v-else-if="submitted && !$v.email.email">Please insert valid email</span>
+            <span v-else>&nbsp;</span>
+          </div>
         </div>
         <div class="form-group d-flex-1 align-items-center">
           <label for="mobile">お電話番号</label>
           <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile" >
+          <div class="invalid-feedback d-block">
+            <span v-if="submitted && !$v.mobile.required">Please insert phone number</span>
+            <span v-else>&nbsp;</span>
+          </div>
         </div>
 
         <div class="form-group d-flex-1 align-items-center">
           <label for="address">ご住所</label>
           <input type="text" class="ml-3-1 form-control" id="address" v-model="address" >
+          <div class="invalid-feedback d-block">
+            <span v-if="submitted && !$v.address.required">Please insert address</span>
+            <span v-else>&nbsp;</span>
+          </div>
         </div>
 
         <div class="form-group d-flex-1 align-items-center">
           <label for="post">郵便番号<span class="pass">（ハイフンなし）</span></label>
           <input type="number" class="ml-3-1 form-control" id="post" v-model="post" >
+          <div class="invalid-feedback d-block">
+            <span v-if="submitted && !$v.post.required">Please insert post code</span>
+            <span v-else>&nbsp;</span>
+          </div>
         </div>
 
         <div class="form-group d-flex-1 align-items-center">
           <label for="password">パスワード <span class="pass"> (マイページログイン時に必要となります。)</span></label>
           <input type="password" class="ml-3-1 form-control" id="password" v-model="password" >
+          <div class="invalid-feedback d-block">
+            <span v-if="submitted && !$v.password.required">Please insert password</span>
+            <span v-else-if="submitted && !$v.password.minLength">Password require at least {{$v.password.$params.minLength.min}} length</span>
+            <span v-else>&nbsp;</span>
+          </div>
         </div>
 
         <div class="form-group">
@@ -52,7 +74,7 @@
 
         </div>
         <div class="d-flex justify-content-center">
-          <button class="mt-2 btn background-main" @click="submit()">入力内容を確認する</button>
+          <button class="mt-2 btn background-main" @click="submit()" :disabled="!accept">入力内容を確認する</button>
         </div>
       </div>
     </div>
@@ -69,13 +91,34 @@
 
 <script>
     import Vue from 'vue';
+    import {validationMixin} from 'vuelidate';
+    import {required, email, maxLength, minLength} from 'vuelidate/lib/validators';
     import {
         registerMember
     } from '../api/user';
 
     export default Vue.extend({
+        mixins: [validationMixin],
+        validations: {
+            email: {
+                required, email
+            },
+            mobile: {
+                required
+            },
+            address: {
+                required
+            },
+            post: {
+                required
+            },
+            password: {
+                required, minLength: minLength(8)
+            }
+        },
         data() {
             return {
+                submitted: false,
                 id: this.$route.params.id,
                 email: null,
                 surname: null,
@@ -102,18 +145,23 @@
                 this.url = URL.createObjectURL(this.file);
             },
             submit() {
-                if(this.accept == false) {
-                    return ;
+                this.submitted = true;
+                this.$v.$touch();
+                if (this.$v.$invalid) {
+                    return;
                 }
-                let data = new FormData();
-                data.append('id', this.id);
-                data.append('name', this.full_name);
-                data.append('email', this.email);
-                data.append('user_id', localStorage.getItem("sougi-user-id" + this.id));
-                data.append('address', this.address);
-                data.append('post', this.post);
-                data.append('mobile', this.mobile);
-                data.append('password', this.password);
+                this.submitted = false;
+                let data = {
+                    id: this.id,
+                    name: this.full_name,
+                    email: this.email,
+                    user_id: localStorage.getItem("sougi-user-id" + this.id),
+                    address: this.address,
+                    post: this.post,
+                    mobile: this.mobile,
+                    password: this.password
+                };
+
                 registerMember(data).then(response => {
                     let result = response.data;
                     if(result.status == true) {

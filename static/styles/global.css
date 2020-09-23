@@ -227,7 +227,7 @@ header h1 {
 
 /* フッター */
 footer {
-  height: 120px;
+  min-height: 120px;
   padding: 15px 0;
   background: var(--main-color);
   color: #fff;

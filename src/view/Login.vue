@@ -73,10 +73,12 @@
                 }
                 this.submitted = false;
                 let id = this.$route.params.id;
-                let data = new FormData();
-                data.append('id', id);
-                data.append('email', this.email);
-                data.append('password', this.password);
+                let data = {
+                    id: id,
+                    email: this.email,
+                    password: this.password
+                };
+
                 loginUser(data).then(response => {
                     let data = response.data;
                     if(data.length > 0) {

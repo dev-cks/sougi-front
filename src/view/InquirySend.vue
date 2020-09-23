@@ -59,12 +59,13 @@
                 history.back()
             },
             submit() {
-                let data = new FormData();
                 let type = this.$route.params.type;
-                data.append('member_id', this.member_id);
-                data.append('email', this.email);
-                data.append('content', this.content);
-                data.append('type', type);
+                let data = {
+                    member_id: this.member_id,
+                    email: this.email,
+                    content: this.content,
+                    type: type,
+                };
                 uploadInquiry(data).then(response => {
                     let data = response.data;
                     console.log(data);

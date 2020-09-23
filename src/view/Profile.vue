@@ -26,11 +26,22 @@
         <div class="form-group d-flex-1 align-items-center">
           <label for="password">メールアドレス</label>
           <input type="password" class="ml-3-1 form-control" id="password" v-model="password">
+          <div class="invalid-feedback d-block">
+            <span v-if="submitted && !$v.password.required">Please insert password</span>
+            <span v-else-if="submitted && !$v.password.minLength">Password require at least {{$v.password.$params.minLength.min}} length</span>
+            <span v-else>&nbsp;</span>
+          </div>
         </div>
 
         <div class="form-group d-flex-1 align-items-center">
           <label for="confirm">パスワード</label>
           <input type="password" class="ml-3-1 form-control" id="confirm" v-model="confirm">
+          <div class="invalid-feedback d-block">
+            <span v-if="submitted && !$v.confirm.required">Please insert password confirm</span>
+            <span v-else-if="submitted && !$v.confirm.minLength">Password confirm require at least {{$v.confirm.$params.minLength.min}} length</span>
+            <span v-else-if="submitted && !$v.confirm.sameAsPassword">Password confirm should be same with password</span>
+            <span v-else>&nbsp;</span>
+          </div>
         </div>
 
         <div class="d-flex justify-content-center">
@@ -50,11 +61,23 @@
         getUserInfo,
         updatePassword
     } from '../api/user';
+    import {validationMixin} from 'vuelidate';
+    import {required, sameAs, maxLength, minLength} from 'vuelidate/lib/validators';
 
     export default Vue.extend({
+        mixins: [validationMixin],
+        validations: {
+
+            password: {
+                required, minLength: minLength(8)
+            },
+            confirm: {
+                required, minLength: minLength(8), sameAsPassword: sameAs('password')
+            }
+        },
         data() {
             return {
-
+                submitted: false,
                 email: null,
                 surname: null,
                 name: null,
@@ -110,6 +133,12 @@
 
             },
             changePassword() {
+                this.submitted = true;
+                this.$v.$touch();
+                if (this.$v.$invalid) {
+                    return;
+                }
+                this.submitted = false;
                 if(this.password == this.confirm) {
                     let data = {
                         member_id: this.member_id,
