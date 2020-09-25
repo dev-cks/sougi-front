@@ -108,7 +108,6 @@
 
         methods: {
             getCompanyInfo() {
-                let member_id = localStorage.getItem("sougi-member-id" + this.id);
                 let data = {
                     id: this.company_id
                 };

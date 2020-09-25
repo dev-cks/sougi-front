@@ -42,6 +42,8 @@
     import {
         loginUser
     } from '../api/user';
+    import {getCookie, setCookie} from '../util/support';
+    import {KEY_ALLOW_COOKIE, KEY_MEMBER_ID, KEY_USER_NAME, KEY_UUID, KEY_VIEWER_ID} from "../config/constants";
     export default Vue.extend({
         mixins: [validationMixin],
         validations: {
@@ -86,12 +88,11 @@
                         let uuid = data.uuid;
                         let member_id = data.id;
                         let viewer_id = data.viewer_id;
-                        localStorage.setItem("sougi-user-name" + id, data.name);
-                        localStorage.setItem("sougi-uuid" + id, uuid);
-                        localStorage.setItem("sougi-member-id" + id, member_id);
-                        console.log("Index is " + "sougi-member-id" + id);
-
-                        localStorage.setItem("sougi-user-id" + id, viewer_id);
+                        setCookie(KEY_USER_NAME + id, data.name);
+                        setCookie(KEY_MEMBER_ID + id, member_id);
+                        setCookie(KEY_UUID + id, uuid);
+                        setCookie(KEY_VIEWER_ID + id, viewer_id);
+                        setCookie(KEY_ALLOW_COOKIE, 1);
                         this.$router.push({
                             path: '/incense/' + id
                         });

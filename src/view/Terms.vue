@@ -197,11 +197,6 @@
         methods: {
             moveBack() {
                 history.back();
-            },
-            sendQuestion(type) {
-                this.$router.push({
-                    path: "/inquiry/" + type
-                });
             }
         }
     });

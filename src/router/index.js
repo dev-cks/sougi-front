@@ -16,6 +16,7 @@ import Profile from '@/view/Profile'
 import Register from '@/view/Register'
 import RegisterConfirm from '@/view/RegisterConfirm'
 import Terms from '@/view/Terms'
+import NotFound from '@/view/NotFound';
 
 Vue.use(Router)
 
@@ -25,7 +26,7 @@ export default new Router({
     {
       path: '/main',
       name: 'Home',
-      component: Home
+      component: Home,
     },
     {
       path: '/user-info/',
@@ -87,5 +88,9 @@ export default new Router({
       path: '/teikei',
       component: Condolence
     },
+    {
+      path: '*',
+      component: NotFound
+    }
   ]
 })

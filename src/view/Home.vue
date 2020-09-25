@@ -58,17 +58,19 @@
         </div>
       </div>
       <div>
-        <template v-if="status != 1">
+        <template v-if="status == 0 || status == 1">
           <button  class="gokicho btn" @click="moveRegister()">
             受付はこちら（ご記帳）
           </button>
-          <button  class="mt-2 login btn" @click="moveLogin()">
-            ご記帳がお済みの方
+        </template>
+        <template v-if="status == 2">
+          <button  class="mt-2 login btn" @click="moveNext()">
+            ご記帳がお済の方
           </button>
         </template>
-        <template v-if="status == 1">
-          <button  class="gokicho btn" @click="moveNext()">
-            ビデオを見に行く
+        <template v-if="status == 3">
+          <button  class="mt-2 login btn" @click="moveLive()">
+            葬儀中継に進む
           </button>
         </template>
 
@@ -85,7 +87,22 @@
         getFuneralInfo
     } from '../api/funeral';
     import Datetimes from '../util/datetimes';
-    import {LIVE_BASE} from '../config/constants';
+    import {
+        KEY_COMPANY_ID,
+        KEY_CURRENT_FUNERAL_ID,
+        LIVE_BASE,
+        KEY_CURRENT_NAME,
+        KEY_ALLOW_COOKIE,
+        KEY_MEMBER_ID,
+        KEY_VIEWER_ID,
+        KEY_REGISTER_STEP,
+        REGISTER_UUID,
+        REGISTER_NEXT,
+        REGISTER_FINISH,
+        REGISTER_INFO
+    } from '../config/constants';
+    import {getCookie, setCookie, removeCookie} from '../util/support';
+    import {ALLOW_COOKIE} from '../config/language';
 
     export default Vue.extend({
         data() {
@@ -97,19 +114,32 @@
         },
 
         created(){
+            //removeCookie(KEY_ALLOW_COOKIE);
             console.log(this.$route.query);
-            localStorage.setItem("sougi-current-name", this.name);
+            setCookie(KEY_CURRENT_NAME, this.name);
             this.getFuneralInfo();
         },
 
         methods: {
             getUserInfo(id) {
-                let member_id = localStorage.getItem("sougi-member-id" + id);
-                console.log(member_id);
-                if(member_id && member_id != 'undefined') {
-                    this.status = 1;
-                }
+                let allow_status = getCookie(KEY_ALLOW_COOKIE);
+                if(allow_status == undefined) {
+                    this.status = 0;
+                } else {
+                    let viewer_id = getCookie(KEY_VIEWER_ID + id);
+                    if(viewer_id == undefined) {
+                        this.status = 1;
+                    } else {
+                        let member_id = getCookie(KEY_MEMBER_ID + id);
+                        if(member_id != undefined) {
+                            this.status = 3;
+                        } else {
+                            this.status = 2;
+                        }
+                    }
 
+
+                }
             },
             getFuneralInfo(){
                 let split = this.name.split("_");
@@ -126,28 +156,50 @@
                         this.getUserInfo(this.funeralInfo.id);
                         let funeral_id = this.funeralInfo.id;
                         let company_id = this.funeralInfo.company_id;
-                        localStorage.setItem("sougi-current-funeral-id", funeral_id);
-                        localStorage.setItem("sougi-current-company-id", company_id);
+                        setCookie(KEY_CURRENT_FUNERAL_ID, funeral_id);
+                        setCookie(KEY_COMPANY_ID, company_id);
                         this.$refs.navigation.changeFuneral();
                         this.$refs.footer.changeFuneral();
                     } else {
-                        this.funeralInfo = {};
-                        this.getUserInfo(this.funeralInfo.id);
+
                     }
 
                 });
             },
             moveRegister() {
-                this.$router.push({
-                    path: `/bkeeping-pre/${this.funeralInfo.id}`,
-                });
-            },
-            moveLogin() {
-                this.$router.push({
-                    path: `/login/${this.funeralInfo.id}`,
-                });
+                if(this.status == 1) {
+                    this.$router.push({
+                        path: `/bkeeping-pre/${this.funeralInfo.id}`,
+                    });
+                } else {
+                    this.$confirm(ALLOW_COOKIE).then(() => {
+                        setCookie(KEY_ALLOW_COOKIE, 1);
+                        this.$router.push({
+                            path: `/bkeeping-pre/${this.funeralInfo.id}`,
+                        });
+                    });
+
+                }
+
             },
             moveNext() {
+                let step = getCookie(KEY_REGISTER_STEP + this.funeralInfo.id);
+                if(step == REGISTER_UUID) {
+                    this.$router.push({
+                        path: `/complete/${this.funeralInfo.id}`,
+                    });
+                } else if(step == REGISTER_NEXT) {
+                    this.$router.push({
+                        path: `/notknowother/${this.funeralInfo.id}`,
+                    });
+                } else if(step == REGISTER_INFO) {
+                    this.$router.push({
+                        path: `/bkeeping/${this.funeralInfo.id}`,
+                    });
+                }
+
+            },
+            moveLive() {
                 window.location.href = LIVE_BASE + '/live.html?id=' + this.funeralInfo.id;
             }
         }

@@ -43,25 +43,25 @@ ul {
 }
 
 #nprogress {
-  position: fixed;
-  top: 0px;
-  width: 100%;
-  height: 100%;
+  position: fixed !important;
+  top: 0px !important;
+  width: 100% !important;
+  height: 100% !important;
 
-  opacity: .25;
-  z-index: 1030;
-  pointer-events: auto;
+  opacity: .25 !important;
+  z-index: 1030 !important;
+  pointer-events: auto !important;
 
 }
 
 #nprogress .spinner-icon {
-  width: 48px;
-  height: 48px;
+  width: 48px !important;
+  height: 48px !important;
 }
 
 #nprogress .spinner {
-  top: calc(50% - 24px);
-  right: calc(50% - 24px);
+  top: calc(50% - 24px) !important;
+  right: calc(50% - 24px) !important;
 }
 </style>
 

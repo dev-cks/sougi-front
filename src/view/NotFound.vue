@@ -1,20 +1,7 @@
 <template>
   <div class="form">
-    <vNavigation></vNavigation>
-    <div class="form-group">
-      <div id="preview">
-        <img v-if="url" :src="url"/>
-        <template v-else>
 
-        </template>
 
-      </div>
-      <div class="d-flex justify-content-center">
-        <button class="mt-2 btn text-black" @click="$refs.file.click()">画像を挿入</button>
-      </div>
-
-      <input type="file" @change="onFileChange" ref="file" style="display: none"/>
-    </div>
 
 
     <div class="form-group d-flex-1 align-items-center">
@@ -40,7 +27,7 @@
     <div class="d-flex justify-content-center">
       <button class="mt-2 btn background-main" @click="submit()">記帳デ一タを送信</button>
     </div>
-    <vFooter></vFooter>
+
 
   </div>
 
@@ -55,8 +42,6 @@
     import {
         registerUser
     } from '../api/user';
-    import {setCookie} from '../util/support';
-    import {KEY_USER_NAME, KEY_VIEWER_ID, KEY_UUID, KEY_REGISTER_STEP, REGISTER_UUID} from '../config/constants';
 
     export default Vue.extend({
         mixins: [validationMixin],
@@ -85,10 +70,7 @@
         },
 
         methods: {
-            onFileChange(e) {
-                this.file = e.target.files[0];
-                this.url = URL.createObjectURL(this.file);
-            },
+
             submit() {
                 this.submitted = true;
                 this.$v.$touch();
@@ -96,28 +78,9 @@
                     return;
                 }
                 this.submitted = false;
-                if(this.file == null) {
-                    alert("Please add image file");
-                    return ;
-                }
-                this.id = this.$route.params.id;
-                let data = new FormData();
-
-                data.append('id', this.id);
-                data.append('surname', this.surname);
-                data.append('name', this.name);
-                data.append('file', this.file);
-                registerUser(data).then(response => {
-                    let data = response.data;
-                    let user_id = data.id;
-                    let uuid = data.uuid;
-                    setCookie(KEY_USER_NAME + this.id, this.name + '_' + this.surname);
-                    setCookie(KEY_VIEWER_ID + this.id, user_id);
-                    setCookie(KEY_UUID + this.id, uuid);
-                    setCookie(KEY_REGISTER_STEP + this.id, REGISTER_UUID);
-                    this.$router.push({
-                        path: '/complete/' + this.id
-                    });
+                let full_name = this.name + "_" + this.surname;
+                this.$router.push({
+                    path: '/main?name=' + full_name
                 });
             }
         },

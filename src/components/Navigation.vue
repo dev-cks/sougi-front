@@ -21,6 +21,8 @@
 
 <script>
     import Vue from 'vue';
+    import {getCookie} from '../util/support';
+    import {KEY_CURRENT_FUNERAL_ID, KEY_CURRENT_NAME, KEY_MEMBER_ID} from '../config/constants';
     export default Vue.extend({
 
         data() {
@@ -38,27 +40,23 @@
         methods: {
             changeFuneral() {
                 this.statusValue = 0;
-                let id = localStorage.getItem("sougi-current-funeral-id");
-                console.log("Id is " + id);
-                let member_id = localStorage.getItem("sougi-member-id" + id);
-                console.log("Test Index is " + "sougi-member-id" + id);
-                console.log(member_id);
-                if(member_id && member_id != 'undefined') {
-                    this.statusValue = 1;
+                let id = getCookie(KEY_CURRENT_FUNERAL_ID);
+                if(id != undefined) {
+                    let member_id = getCookie(KEY_MEMBER_ID + id);
+                    if(member_id != undefined) {
+                        this.statusValue = 1;
+                    }
                 }
             },
             moveTop() {
-                this.statusValue = 0;
-                console.log("Clicked");
-                let name = localStorage.getItem("sougi-current-name");
+                let name = getCookie(KEY_CURRENT_NAME);
                 this.$router.push({
                     path: '/main?name=' + name
                 });
             },
 
             moveNext() {
-                console.log("Clicked");
-                let id = localStorage.getItem("sougi-current-funeral-id");
+                let id = getCookie(KEY_CURRENT_FUNERAL_ID);
                 if(this.statusValue == 1) {
                     this.$router.push({
                         path: '/user-info/'

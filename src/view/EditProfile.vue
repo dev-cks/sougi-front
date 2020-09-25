@@ -29,11 +29,7 @@
         </div>
         <div class="form-group d-flex-1 align-items-center">
           <label for="mobile">お電話番号</label>
-          <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile" >
-          <div class="invalid-feedback d-block">
-            <span v-if="submitted && !$v.mobile.required">Please insert phone number</span>
-            <span v-else>&nbsp;</span>
-          </div>
+          <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile" disabled>
         </div>
 
         <div class="form-group d-flex-1 align-items-center">
@@ -96,15 +92,21 @@
     import {
         registerMember
     } from '../api/user';
+    import {getCookie, setCookie} from '../util/support';
+    import {
+        KEY_USER_NAME,
+        KEY_VIEWER_ID,
+        KEY_REGISTER_STEP,
+        REGISTER_INFO,
+        KEY_MEMBER_ID,
+        KEY_MEMBER_ID_PRE, KEY_USER_MOBILE
+    } from '../config/constants';
 
     export default Vue.extend({
         mixins: [validationMixin],
         validations: {
             email: {
                 required, email
-            },
-            mobile: {
-                required
             },
             address: {
                 required
@@ -133,7 +135,8 @@
         },
 
         created(){
-            this.full_name = localStorage.getItem("sougi-user-name" + this.id);
+            this.full_name = getCookie(KEY_USER_NAME + this.id);
+            this.mobile = getCookie(KEY_USER_MOBILE + this.id);
             let split = this.full_name.split("_");
             this.name = split[0];
             this.surname = split[1];
@@ -155,7 +158,7 @@
                     id: this.id,
                     name: this.full_name,
                     email: this.email,
-                    user_id: localStorage.getItem("sougi-user-id" + this.id),
+                    user_id: getCookie(KEY_VIEWER_ID + this.id),
                     address: this.address,
                     post: this.post,
                     mobile: this.mobile,
@@ -166,7 +169,8 @@
                     let result = response.data;
                     if(result.status == true) {
                         let member_id = result.id;
-                        localStorage.setItem("sougi-member-id" + this.id, member_id);
+                        setCookie(KEY_MEMBER_ID_PRE + this.id, member_id);
+                        setCookie(KEY_REGISTER_STEP + this.id, REGISTER_INFO);
                         this.$router.push({
                             path: '/bkeeping/' + this.id
                         });

@@ -62,6 +62,8 @@
     import {
         getFuneralIncenseInfo
     } from '../api/funeral';
+    import {getCookie} from '../util/support';
+    import {KEY_USER_NAME} from '../config/constants';
 
     export default Vue.extend({
         data() {
@@ -75,7 +77,7 @@
 
         created(){
             this.getFuneralInfo();
-            let name = localStorage.getItem("sougi-user-name");
+            let name = getCookie(KEY_USER_NAME + this.id);
             this.name = name.replace('-', ' ');
         },
 

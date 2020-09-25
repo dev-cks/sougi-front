@@ -32,7 +32,8 @@
 
 <script>
     import Vue from 'vue';
-
+    import {getCookie} from '../util/support';
+    import {KEY_CURRENT_FUNERAL_ID, KEY_COMPANY_ID, KEY_MEMBER_ID} from '../config/constants';
     export default Vue.extend({
         data() {
             return {
@@ -50,17 +51,16 @@
         methods: {
             changeFuneral() {
                 this.statusValue = 0;
-                let id = localStorage.getItem("sougi-current-funeral-id");
-                console.log("Id is " + id);
-                let member_id = localStorage.getItem("sougi-member-id" + id);
-                console.log("Test Index is " + "sougi-member-id" + id);
-                console.log(member_id);
-                if(member_id && member_id != 'undefined') {
-                    this.statusValue = 1;
+                let id = getCookie(KEY_CURRENT_FUNERAL_ID);
+                if(id != undefined) {
+                    let member_id = getCookie(KEY_MEMBER_ID + id);
+                    if(member_id != undefined) {
+                        this.statusValue = 1;
+                    }
                 }
             },
             moveCompany() {
-                let company_id = localStorage.getItem("sougi-current-company-id");
+                let company_id = getCookie(KEY_COMPANY_ID);
                 this.$router.push({
                     path: '/company/' + company_id
                 });

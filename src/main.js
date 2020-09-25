@@ -7,6 +7,9 @@ import components from './components';
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import '../static/styles/global.css'
+import VueSimpleAlert from "vue-simple-alert";
+
+
 
 Object.keys(components).forEach((key) => {
   var name = key.replace(/(\w)/, (v) => v.toUpperCase())
@@ -17,6 +20,7 @@ Vue.config.productionTip = false
 import Vuelidate from 'vuelidate';
 
 Vue.use(Vuelidate);
+Vue.use(VueSimpleAlert);
 
 /* eslint-disable no-new */
 new Vue({

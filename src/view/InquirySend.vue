@@ -39,6 +39,8 @@
     import {
         uploadInquiry
     } from '../api/inquiry';
+    import {getCookie} from '../util/support';
+    import {KEY_CURRENT_FUNERAL_ID, KEY_MEMBER_ID} from '../config/constants';
     export default Vue.extend({
         data() {
             return {
@@ -49,8 +51,8 @@
         },
 
         created(){
-            let funeral_id = localStorage.getItem("sougi-current-funeral-id");
-            this.member_id = localStorage.getItem("sougi-member-id" + funeral_id);
+            let funeral_id = getCookie(KEY_CURRENT_FUNERAL_ID);
+            this.member_id = getCookie(KEY_MEMBER_ID + funeral_id);
             console.log(this.member_id);
         },
 

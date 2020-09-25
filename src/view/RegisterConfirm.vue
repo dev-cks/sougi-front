@@ -39,7 +39,8 @@
     import {
         getUserInfo
     } from '../api/user';
-
+    import {getCookie, setCookie} from '../util/support';
+    import {KEY_MEMBER_ID, KEY_MEMBER_ID_PRE, KEY_REGISTER_STEP, REGISTER_FINISH} from '../config/constants';
     export default Vue.extend({
         data() {
             return {
@@ -59,7 +60,7 @@
 
         methods: {
             getMemberInfo() {
-                let member_id = localStorage.getItem("sougi-member-id" + this.id);
+                let member_id = getCookie(KEY_MEMBER_ID_PRE + this.id);
                 let data = {
                     member_id: member_id
                 };
@@ -77,6 +78,9 @@
             },
 
             moveNext() {
+                let member_id = getCookie(KEY_MEMBER_ID_PRE + this.id);
+                setCookie(KEY_MEMBER_ID + this.id, member_id);
+                setCookie(KEY_REGISTER_STEP + this.id, REGISTER_FINISH);
                 this.$router.push({
                     path: '/incense/' + this.id
                 });

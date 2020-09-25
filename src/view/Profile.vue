@@ -63,6 +63,8 @@
     } from '../api/user';
     import {validationMixin} from 'vuelidate';
     import {required, sameAs, maxLength, minLength} from 'vuelidate/lib/validators';
+    import {getCookie} from '../util/support';
+    import {KEY_CURRENT_FUNERAL_ID, KEY_MEMBER_ID} from '../config/constants';
 
     export default Vue.extend({
         mixins: [validationMixin],
@@ -97,10 +99,22 @@
             this.getMemberInfo();
         },
 
+        beforeRouteEnter (to, from, next) {
+            let id = getCookie(KEY_CURRENT_FUNERAL_ID);
+            if(id != undefined) {
+                let member = getCookie(KEY_MEMBER_ID + id);
+                if(member != undefined) {
+                    next();
+                    return ;
+                }
+            }
+            next('/');
+        },
+
         methods: {
             getMemberInfo() {
-                let id = localStorage.getItem("sougi-current-funeral-id");
-                this.member_id = localStorage.getItem("sougi-member-id" + id);
+                let id = getCookie(KEY_CURRENT_FUNERAL_ID);
+                this.member_id = getCookie(KEY_MEMBER_ID + id);
                 let data = {
                     member_id: this.member_id,
                     id: id
@@ -151,7 +165,7 @@
 
             },
             moveIncense() {
-                let id = localStorage.getItem("sougi-current-funeral-id");
+                let id = getCookie(KEY_CURRENT_FUNERAL_ID);
                 this.$router.push({
                     path: '/incense/' + id
                 });
