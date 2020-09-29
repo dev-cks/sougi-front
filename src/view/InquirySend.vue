@@ -47,7 +47,8 @@
                 email: null,
                 content: null,
                 member_id: null,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -59,6 +60,7 @@
 
             this.connection = new WebSocket(API_BASE);
             this.connection.onmessage = function(event) {
+                ref.loader.hide();
                 let data = JSON.parse(event.data);
                 console.log(data);
             };
@@ -67,6 +69,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             moveBack() {
                 history.back()
             },
@@ -83,6 +92,7 @@
                     method: 'inquiry',
                     body: data
                 }));
+                this.createLoader();
             }
         }
     });

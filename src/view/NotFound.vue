@@ -47,10 +47,10 @@
         mixins: [validationMixin],
         validations: {
             surname: {
-                required, minLength: minLength(5)
+                required, minLength: minLength(1)
             },
             name: {
-                required, minLength: minLength(5)
+                required, minLength: minLength(1)
             }
         },
         data() {

@@ -91,7 +91,8 @@
                 money: 0,
                 flower: 0,
                 condolence: 0,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -99,7 +100,7 @@
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
-                console.log(event);
+                ref.loader.hide();
                 let data = JSON.parse(event.data);
                 if(data.type == 'get_member') {
                     if(data.status == true) {
@@ -128,6 +129,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             updateData(data) {
                 let user = data.user[0];
                 let full_name = user.name;
@@ -164,6 +172,7 @@
                     path: 'get_member',
                     body: data
                 }));
+                this.createLoader();
 
             },
             changePassword() {
@@ -186,6 +195,7 @@
                         path: 'change_password',
                         body: data
                     }));
+                    this.createLoader();
 
                 }
 

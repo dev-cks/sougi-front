@@ -73,7 +73,8 @@
                 company_name: '',
                 flower_name: '',
                 flower_cost: 0,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -85,7 +86,7 @@
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
-                console.log(event);
+                ref.loader.hide();
                 let data = JSON.parse(event.data);
                 if(data.status == true) {
                     ref.updateData(data.content);
@@ -97,6 +98,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             updateData(data) {
                 this.company_name = data.company_name;
                 this.flower_name = data.flower_name;
@@ -113,6 +121,7 @@
                     path: 'get_incense',
                     body: data
                 }));
+                this.createLoader();
             },
 
             moveNext() {

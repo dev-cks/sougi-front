@@ -51,7 +51,8 @@
                 mobile: null,
                 address: null,
                 post: null,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -59,7 +60,7 @@
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
-                console.log(event);
+                ref.loader.hide();
                 let data = JSON.parse(event.data);
                   if(data.status == true) {
                       ref.updateData(data.content.user[0]);
@@ -71,6 +72,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             updateData(data) {
                 console.log(data);
                 let full_name = data.name;
@@ -93,6 +101,7 @@
                     path: 'get_member',
                     body: data
                 }));
+                this.createLoader();
 
             },
 

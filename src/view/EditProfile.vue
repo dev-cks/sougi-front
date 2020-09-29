@@ -131,7 +131,8 @@
                 post: null,
                 password: null,
                 accept: false,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -145,7 +146,7 @@
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
-                console.log(event);
+                ref.loader.hide();
                 let data = JSON.parse(event.data);
                   if(data.status == true) {
                       ref.updateData(data);
@@ -156,6 +157,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             onFileChange(e) {
                 this.file = e.target.files[0];
                 this.url = URL.createObjectURL(this.file);
@@ -192,6 +200,7 @@
                     path: 'register_member',
                     body: data
                 }));
+                this.createLoader();
 
 
 

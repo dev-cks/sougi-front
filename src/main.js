@@ -10,7 +10,9 @@ import '../static/styles/global.css'
 import VueSimpleAlert from "vue-simple-alert";
 import socketio from 'socket.io';
 import VueSocketIO from 'vue-socket.io';
-
+import Loading from 'vue-loading-overlay';
+// Import stylesheet
+import 'vue-loading-overlay/dist/vue-loading.css';
 
 Object.keys(components).forEach((key) => {
   var name = key.replace(/(\w)/, (v) => v.toUpperCase())
@@ -19,7 +21,7 @@ Object.keys(components).forEach((key) => {
 
 Vue.config.productionTip = false
 import Vuelidate from 'vuelidate';
-
+Vue.use(Loading);
 Vue.use(Vuelidate);
 Vue.use(VueSimpleAlert);
 

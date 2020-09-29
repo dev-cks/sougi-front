@@ -23,6 +23,7 @@
     "socket.io-client": "^2.3.0",
     "vue": "^2.6.12",
     "vue-cookies": "^1.7.4",
+    "vue-loading-overlay": "^3.4.1",
     "vue-router": "^3.0.1",
     "vue-simple-alert": "^1.1.1",
     "vue-socket.io": "^3.0.10",

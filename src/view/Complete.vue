@@ -8,7 +8,13 @@
       <div class="form">
         <div class="form-group d-flex-1 align-items-center">
           <label for="mobile">お電話番号</label>
-          <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile" >
+          <div class="d-flex">
+            <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile" >
+            <button class="ml-2 btn-danger rounded" @click="sendCode()" :disabled="!isEnabled">Send</button>
+          </div>
+          <span v-if="!isEnabled">{{convertTime(timeRemain)}}</span>
+          <span v-else>&nbsp;</span>
+
           <div class="invalid-feedback d-block">
             <span v-if="(submitted || submitCode) && !$v.mobile.required">Please insert phone number</span>
             <span v-else>&nbsp;</span>
@@ -17,10 +23,8 @@
 
         <div class="form-group d-flex-1 align-items-center">
           <label for="mobile">検証コード</label>
-          <div class="d-flex">
-            <input type="number" class="ml-3-1 form-control" id="code" v-model="code" >
-            <button class="ml-2 btn-danger rounded" @click="sendCode()">Send</button>
-          </div>
+          <input type="number" class="ml-3-1 form-control" id="code" v-model="code" >
+
 
 
           <div class="invalid-feedback d-block">
@@ -69,7 +73,10 @@
                 submitCode: false,
                 mobile: null,
                 code: null,
-                connection: null
+                connection: null,
+                loader: null,
+                isEnabled: true,
+                timeRemain: 0
             };
         },
 
@@ -80,6 +87,7 @@
                 console.log(event);
                 let data = JSON.parse(event.data);
                 if(data.type == 'check_code') {
+                    ref.loader.hide();
                     if(data.content.status == true) {
                         ref.updateData();
                     }
@@ -93,6 +101,35 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
+            countDown() {
+              this.timeRemain = this.timeRemain - 1;
+              if(this.timeRemain == 0) {
+                  this.isEnabled = true;
+              } else {
+                  setTimeout(this.countDown, 1000);
+              }
+            },
+            convertTime(time) {
+                let str = '';
+                if(time < 60) {
+                    str = time + ' second';
+                } else {
+                    let minutes = Math.floor(time / 60);
+                    str = minutes + " minutes";
+                    if(time % 60 != 0) {
+                        str = str + " " + (time % 60) + ' second';
+                    }
+
+                }
+                return str + ' left';
+            },
             updateData() {
                 let id = this.$route.params.id;
                 setCookie(KEY_USER_MOBILE + id, this.mobile);
@@ -119,11 +156,10 @@
                     path: 'check_code',
                     body: data
                 }));
-
-
-
+                this.createLoader();
             },
             sendCode() {
+
                 console.log("Click send");
                 this.submitCode = true;
                 this.$v.$touch();
@@ -131,7 +167,7 @@
                     return;
                 }
                 this.submitCode = false;
-                console.log("Call API");
+
                 let data = {
                     mobile: this.mobile
                 }
@@ -141,6 +177,10 @@
                     path: 'send_code',
                     body: data
                 }));
+
+                this.isEnabled = false;
+                this.timeRemain = 60 * 5;
+                setTimeout(this.countDown, 1000);
             }
         }
     });

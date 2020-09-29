@@ -62,10 +62,10 @@
         mixins: [validationMixin],
         validations: {
             surname: {
-                required, minLength: minLength(5)
+                required, minLength: minLength(1)
             },
             name: {
-                required, minLength: minLength(5)
+                required, minLength: minLength(1)
             }
         },
         data() {
@@ -76,7 +76,8 @@
                 url: null,
                 file: null,
                 id: null,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -84,7 +85,7 @@
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
-                console.log(event);
+                ref.loader.hide();
                 let data = JSON.parse(event.data);
                 if(data.status == true) {
                     ref.updateData(data);
@@ -95,6 +96,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             onFileChange(e) {
                 this.file = e.target.files[0];
                 this.url = URL.createObjectURL(this.file);
@@ -136,6 +144,7 @@
                     path: 'register',
                     body: data
                 }));
+                this.createLoader();
             }
         },
     });

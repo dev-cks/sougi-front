@@ -79,6 +79,8 @@
     <vFooter ref="footer"></vFooter>
   </div>
 
+
+
 </template>
 
 <script>
@@ -87,6 +89,7 @@
         API_BASE
     } from '../config/constants';
     import Datetimes from '../util/datetimes';
+
     import {
         KEY_COMPANY_ID,
         KEY_CURRENT_FUNERAL_ID,
@@ -110,7 +113,8 @@
                 funeralInfo: {},
                 status: 0,
                 name: this.$route.query.name,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -121,7 +125,8 @@
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
-                console.log(event);
+                ref.loader.hide();
+                //this.isLoading = false;
                 let data = JSON.parse(event.data);
               if(data.type == 'get_detail') {
                   if(data.status == true) {
@@ -136,6 +141,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             changeData(res) {
                 this.funeralInfo = res.data;
                 this.funeralInfo.create_time = Datetimes.getymd(this.funeralInfo.create_time);
@@ -179,7 +191,7 @@
                     path: 'get_detail',
                     body: data
                 }));
-
+                this.createLoader();
             },
             moveRegister() {
                 if(this.status == 1) {

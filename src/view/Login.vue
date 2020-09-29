@@ -59,7 +59,8 @@
                 submitted: false,
                 email: null,
                 password: null,
-                connection: null
+                connection: null,
+                loader: null
             };
         },
 
@@ -67,7 +68,7 @@
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
-                console.log(event);
+                ref.loader.hide();
                 let data = JSON.parse(event.data);
                 if(data.status == true) {
                     ref.updateData(data.content);
@@ -78,6 +79,13 @@
         },
 
         methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
             updateData(data) {
                 let id = this.$route.params.id;
                 let uuid = data.uuid;
@@ -112,6 +120,7 @@
                     path: 'login',
                     body: data
                 }));
+                this.createLoader();
             }
         }
     });
