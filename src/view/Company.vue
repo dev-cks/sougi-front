@@ -86,8 +86,8 @@
 <script>
     import Vue from 'vue';
     import {
-        getCompanyInfo
-    } from '../api/company';
+        API_BASE
+    } from '../config/constants';
 
     export default Vue.extend({
         data() {
@@ -96,28 +96,44 @@
                 name: null,
                 address: null,
                 contact_name: null,
-                mobile: null
+                mobile: null,
+                connection: null
             };
         },
 
         created(){
             if(this.company_id != 0) {
-                this.getCompanyInfo();
+                this.connection = new WebSocket(API_BASE);
+                let ref = this;
+                this.connection.onmessage = function(event) {
+                    console.log(event);
+                    let data = JSON.parse(event.data);
+                    if(data.status == true) {
+                        ref.updateData(data.content);
+                    }
+                };
+                this.connection.onopen = function(event) {
+                    ref.getCompanyInfo();
+                };
             }
         },
 
         methods: {
+            updateData(data) {
+                this.name = data.name;
+                this.address = data.address;
+                this.mobile = data.mobile;
+                this.contact_name = data.contact_name + " " + data.contact_surname;
+            },
             getCompanyInfo() {
                 let data = {
                     id: this.company_id
                 };
-                getCompanyInfo(data).then(response => {
-                    let data = response.data[0];
-                    this.name = data.name;
-                    this.address = data.address;
-                    this.mobile = data.mobile;
-                    this.contact_name = data.contact_name + " " + data.contact_surname;
-                });
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'company',
+                    body: data
+                }));
             },
 
             moveNext() {

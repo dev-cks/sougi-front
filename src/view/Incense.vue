@@ -60,39 +60,59 @@
 <script>
     import Vue from 'vue';
     import {
-        getFuneralIncenseInfo
-    } from '../api/funeral';
+        API_BASE
+    } from '../config/constants';
     import {getCookie} from '../util/support';
     import {KEY_USER_NAME} from '../config/constants';
 
     export default Vue.extend({
         data() {
             return {
+                id: this.$route.params.id,
                 name: null,
                 company_name: '',
                 flower_name: '',
-                flower_cost: 0
+                flower_cost: 0,
+                connection: null
             };
         },
 
         created(){
-            this.getFuneralInfo();
+            console.log(this.id);
             let name = getCookie(KEY_USER_NAME + this.id);
             this.name = name.replace('-', ' ');
+
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+                if(data.status == true) {
+                    ref.updateData(data.content);
+                }
+            };
+            this.connection.onopen = function(event) {
+                ref.getFuneralInfo();
+            };
         },
 
         methods: {
+            updateData(data) {
+                this.company_name = data.company_name;
+                this.flower_name = data.flower_name;
+                this.flower_cost = data.sell_price;
+            },
             getFuneralInfo() {
                 let id = this.$route.params.id;
                 let data = {
                     id: id
                 };
-                getFuneralIncenseInfo(data).then(response => {
-                    let data = response.data[0];
-                    this.company_name = data.company_name;
-                    this.flower_name = data.flower_name;
-                    this.flower_cost = data.sell_price;
-                })
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'funeral',
+                    path: 'get_incense',
+                    body: data
+                }));
             },
 
             moveNext() {

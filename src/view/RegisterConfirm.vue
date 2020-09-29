@@ -37,8 +37,8 @@
 <script>
     import Vue from 'vue';
     import {
-        getUserInfo
-    } from '../api/user';
+        API_BASE
+    } from '../config/constants';
     import {getCookie, setCookie} from '../util/support';
     import {KEY_MEMBER_ID, KEY_MEMBER_ID_PRE, KEY_REGISTER_STEP, REGISTER_FINISH} from '../config/constants';
     export default Vue.extend({
@@ -51,30 +51,49 @@
                 mobile: null,
                 address: null,
                 post: null,
+                connection: null
             };
         },
 
         created(){
-            this.getMemberInfo();
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+                  if(data.status == true) {
+                      ref.updateData(data.content.user[0]);
+                  }
+            };
+            this.connection.onopen = function(event) {
+                ref.getMemberInfo();
+            };
         },
 
         methods: {
+            updateData(data) {
+                console.log(data);
+                let full_name = data.name;
+                let split = full_name.split('_');
+                this.name = split[0];
+                this.surname = split[1];
+                this.email = data.email;
+                this.mobile = data.mobile;
+                this.address = data.address;
+                this.post = data.post;
+            },
             getMemberInfo() {
                 let member_id = getCookie(KEY_MEMBER_ID_PRE + this.id);
                 let data = {
                     member_id: member_id
                 };
-                getUserInfo(data).then(response => {
-                    let data = response.data.user[0];
-                    let full_name = data.name;
-                    let split = full_name.split('_');
-                    this.name = split[0];
-                    this.surname = split[1];
-                    this.email = data.email;
-                    this.mobile = data.mobile;
-                    this.address = data.address;
-                    this.post = data.post;
-                });
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'get_member',
+                    body: data
+                }));
+
             },
 
             moveNext() {

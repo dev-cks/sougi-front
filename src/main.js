@@ -8,7 +8,8 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import '../static/styles/global.css'
 import VueSimpleAlert from "vue-simple-alert";
-
+import socketio from 'socket.io';
+import VueSocketIO from 'vue-socket.io';
 
 
 Object.keys(components).forEach((key) => {
@@ -21,6 +22,8 @@ import Vuelidate from 'vuelidate';
 
 Vue.use(Vuelidate);
 Vue.use(VueSimpleAlert);
+
+
 
 /* eslint-disable no-new */
 new Vue({

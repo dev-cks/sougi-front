@@ -38,3 +38,19 @@ export function updatePassword(data) {
     data: data
   })
 }
+
+export function sendCode(data) {
+  return request({
+    url: '/user/send-code',
+    method: 'post',
+    data: data
+  })
+}
+
+export function checkCode(data) {
+  return request({
+    url: '/user/check-code',
+    method: 'post',
+    data: data
+  })
+}

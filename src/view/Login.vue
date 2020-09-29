@@ -40,8 +40,8 @@
     import {validationMixin} from 'vuelidate';
     import {required, email, maxLength, minLength} from 'vuelidate/lib/validators';
     import {
-        loginUser
-    } from '../api/user';
+        API_BASE
+    } from '../config/constants';
     import {getCookie, setCookie} from '../util/support';
     import {KEY_ALLOW_COOKIE, KEY_MEMBER_ID, KEY_USER_NAME, KEY_UUID, KEY_VIEWER_ID} from "../config/constants";
     export default Vue.extend({
@@ -59,14 +59,39 @@
                 submitted: false,
                 email: null,
                 password: null,
+                connection: null
             };
         },
 
         created(){
-
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+                if(data.status == true) {
+                    ref.updateData(data.content);
+                }
+            };
+            this.connection.onopen = function(event) {
+            };
         },
 
         methods: {
+            updateData(data) {
+                let id = this.$route.params.id;
+                let uuid = data.uuid;
+                let member_id = data.id;
+                let viewer_id = data.viewer_id;
+                setCookie(KEY_USER_NAME + id, data.name);
+                setCookie(KEY_MEMBER_ID + id, member_id);
+                setCookie(KEY_UUID + id, uuid);
+                setCookie(KEY_VIEWER_ID + id, viewer_id);
+                setCookie(KEY_ALLOW_COOKIE, 1);
+                this.$router.push({
+                    path: '/incense/' + id
+                });
+            },
             submit() {
                 this.submitted = true;
                 this.$v.$touch();
@@ -81,23 +106,12 @@
                     password: this.password
                 };
 
-                loginUser(data).then(response => {
-                    let data = response.data;
-                    if(data.length > 0) {
-                        data = data[0];
-                        let uuid = data.uuid;
-                        let member_id = data.id;
-                        let viewer_id = data.viewer_id;
-                        setCookie(KEY_USER_NAME + id, data.name);
-                        setCookie(KEY_MEMBER_ID + id, member_id);
-                        setCookie(KEY_UUID + id, uuid);
-                        setCookie(KEY_VIEWER_ID + id, viewer_id);
-                        setCookie(KEY_ALLOW_COOKIE, 1);
-                        this.$router.push({
-                            path: '/incense/' + id
-                        });
-                    }
-                });
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'login',
+                    body: data
+                }));
             }
         }
     });

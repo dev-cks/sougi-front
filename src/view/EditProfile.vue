@@ -90,8 +90,8 @@
     import {validationMixin} from 'vuelidate';
     import {required, email, maxLength, minLength} from 'vuelidate/lib/validators';
     import {
-        registerMember
-    } from '../api/user';
+        API_BASE
+    } from '../config/constants';
     import {getCookie, setCookie} from '../util/support';
     import {
         KEY_USER_NAME,
@@ -130,7 +130,8 @@
                 address: null,
                 post: null,
                 password: null,
-                accept: false
+                accept: false,
+                connection: null
             };
         },
 
@@ -140,12 +141,32 @@
             let split = this.full_name.split("_");
             this.name = split[0];
             this.surname = split[1];
+
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+                  if(data.status == true) {
+                      ref.updateData(data);
+                  }
+            };
+            this.connection.onopen = function(event) {
+            };
         },
 
         methods: {
             onFileChange(e) {
                 this.file = e.target.files[0];
                 this.url = URL.createObjectURL(this.file);
+            },
+            updateData(result) {
+                let member_id = result.id;
+                setCookie(KEY_MEMBER_ID_PRE + this.id, member_id);
+                setCookie(KEY_REGISTER_STEP + this.id, REGISTER_INFO);
+                this.$router.push({
+                    path: '/bkeeping/' + this.id
+                });
             },
             submit() {
                 this.submitted = true;
@@ -165,19 +186,14 @@
                     password: this.password
                 };
 
-                registerMember(data).then(response => {
-                    let result = response.data;
-                    if(result.status == true) {
-                        let member_id = result.id;
-                        setCookie(KEY_MEMBER_ID_PRE + this.id, member_id);
-                        setCookie(KEY_REGISTER_STEP + this.id, REGISTER_INFO);
-                        this.$router.push({
-                            path: '/bkeeping/' + this.id
-                        });
-                    } else {
-                        console.log("Error");
-                    }
-                });
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'register_member',
+                    body: data
+                }));
+
+
 
             }
         }

@@ -84,8 +84,8 @@
 <script>
     import Vue from 'vue';
     import {
-        getFuneralInfo
-    } from '../api/funeral';
+        API_BASE
+    } from '../config/constants';
     import Datetimes from '../util/datetimes';
     import {
         KEY_COMPANY_ID,
@@ -110,6 +110,7 @@
                 funeralInfo: {},
                 status: 0,
                 name: this.$route.query.name,
+                connection: null
             };
         },
 
@@ -117,10 +118,37 @@
             //removeCookie(KEY_ALLOW_COOKIE);
             console.log(this.$route.query);
             setCookie(KEY_CURRENT_NAME, this.name);
-            this.getFuneralInfo();
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+              if(data.type == 'get_detail') {
+                  if(data.status == true) {
+                      ref.changeData(data);
+                  }
+              }
+            };
+            this.connection.onopen = function(event) {
+                ref.getFuneralInfo();
+            };
+
         },
 
         methods: {
+            changeData(res) {
+                this.funeralInfo = res.data;
+                this.funeralInfo.create_time = Datetimes.getymd(this.funeralInfo.create_time);
+                this.funeralInfo.start_time = Datetimes.getmdwhs(this.funeralInfo.start_time);
+                this.funeralInfo.funeral_start_time = Datetimes.getmdwhs(this.funeralInfo.funeral_start_time);
+                this.getUserInfo(this.funeralInfo.id);
+                let funeral_id = this.funeralInfo.id;
+                let company_id = this.funeralInfo.company_id;
+                setCookie(KEY_CURRENT_FUNERAL_ID, funeral_id);
+                setCookie(KEY_COMPANY_ID, company_id);
+                this.$refs.navigation.changeFuneral();
+                this.$refs.footer.changeFuneral();
+            },
             getUserInfo(id) {
                 let allow_status = getCookie(KEY_ALLOW_COOKIE);
                 if(allow_status == undefined) {
@@ -137,8 +165,6 @@
                             this.status = 2;
                         }
                     }
-
-
                 }
             },
             getFuneralInfo(){
@@ -147,24 +173,13 @@
                     surname: split[1],
                     name: split[0]
                 };
-                getFuneralInfo(data).then(res=>{
-                    if(res.data.length > 0) {
-                        this.funeralInfo = res.data[0];
-                        this.funeralInfo.create_time = Datetimes.getymd(this.funeralInfo.create_time);
-                        this.funeralInfo.start_time = Datetimes.getmdwhs(this.funeralInfo.start_time);
-                        this.funeralInfo.funeral_start_time = Datetimes.getmdwhs(this.funeralInfo.funeral_start_time);
-                        this.getUserInfo(this.funeralInfo.id);
-                        let funeral_id = this.funeralInfo.id;
-                        let company_id = this.funeralInfo.company_id;
-                        setCookie(KEY_CURRENT_FUNERAL_ID, funeral_id);
-                        setCookie(KEY_COMPANY_ID, company_id);
-                        this.$refs.navigation.changeFuneral();
-                        this.$refs.footer.changeFuneral();
-                    } else {
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'funeral',
+                    path: 'get_detail',
+                    body: data
+                }));
 
-                    }
-
-                });
             },
             moveRegister() {
                 if(this.status == 1) {
@@ -178,9 +193,7 @@
                             path: `/bkeeping-pre/${this.funeralInfo.id}`,
                         });
                     });
-
                 }
-
             },
             moveNext() {
                 let step = getCookie(KEY_REGISTER_STEP + this.funeralInfo.id);

@@ -50,9 +50,8 @@
     import {validationMixin} from 'vuelidate';
     import {required, email, maxLength, minLength} from 'vuelidate/lib/validators';
     import {
-        sendCode,
-        checkCode
-    } from '../api/user';
+        API_BASE
+    } from '../config/constants';
 
     export default Vue.extend({
         mixins: [validationMixin],
@@ -69,15 +68,39 @@
                 submitted: false,
                 submitCode: false,
                 mobile: null,
-                code: null
+                code: null,
+                connection: null
             };
         },
 
         created(){
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+                if(data.type == 'check_code') {
+                    if(data.content.status == true) {
+                        ref.updateData();
+                    }
 
+                } else if(data.type == 'send_code') {
+
+                }
+            };
+            this.connection.onopen = function(event) {
+            };
         },
 
         methods: {
+            updateData() {
+                let id = this.$route.params.id;
+                setCookie(KEY_USER_MOBILE + id, this.mobile);
+                setCookie(KEY_REGISTER_STEP + id, REGISTER_NEXT);
+                this.$router.push({
+                    path: '/notknowother/' + id
+                });
+            },
             completeProfile() {
                 this.submitted = true;
                 this.$v.$touch();
@@ -89,21 +112,14 @@
                 let data = {
                     mobile: this.mobile,
                     code: this.code
-                }
-                checkCode(data).then(response => {
-                   let result = response.data;
-                   console.log(result);
-                   if(result.status == true) {
-                       let id = this.$route.params.id;
-                       setCookie(KEY_USER_MOBILE + id, this.mobile);
-                       setCookie(KEY_REGISTER_STEP + id, REGISTER_NEXT);
-                       this.$router.push({
-                           path: '/notknowother/' + id
-                       });
-                   } else {
+                };
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'check_code',
+                    body: data
+                }));
 
-                   }
-                });
 
 
             },
@@ -119,9 +135,12 @@
                 let data = {
                     mobile: this.mobile
                 }
-                sendCode(data).then(response => {
-                   console.log(response);
-                });
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'send_code',
+                    body: data
+                }));
             }
         }
     });

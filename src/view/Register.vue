@@ -53,8 +53,8 @@
     import {validationMixin} from 'vuelidate';
     import {required, maxLength, minLength} from 'vuelidate/lib/validators';
     import {
-        registerUser
-    } from '../api/user';
+        API_BASE
+    } from '../config/constants';
     import {setCookie} from '../util/support';
     import {KEY_USER_NAME, KEY_VIEWER_ID, KEY_UUID, KEY_REGISTER_STEP, REGISTER_UUID} from '../config/constants';
 
@@ -75,19 +75,40 @@
                 name: null,
                 url: null,
                 file: null,
-                id: null
+                id: null,
+                connection: null
             };
         },
 
         created() {
-            console.log("Id is " + this.id);
-            console.log(this.$route.params);
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+                if(data.status == true) {
+                    ref.updateData(data);
+                }
+            };
+            this.connection.onopen = function(event) {
+            };
         },
 
         methods: {
             onFileChange(e) {
                 this.file = e.target.files[0];
                 this.url = URL.createObjectURL(this.file);
+            },
+            updateData(data) {
+                let user_id = data.id;
+                let uuid = data.uuid;
+                setCookie(KEY_USER_NAME + this.id, this.name + '_' + this.surname);
+                setCookie(KEY_VIEWER_ID + this.id, user_id);
+                setCookie(KEY_UUID + this.id, uuid);
+                setCookie(KEY_REGISTER_STEP + this.id, REGISTER_UUID);
+                this.$router.push({
+                    path: '/complete/' + this.id
+                });
             },
             submit() {
                 this.submitted = true;
@@ -101,34 +122,22 @@
                     return ;
                 }
                 this.id = this.$route.params.id;
-                let data = new FormData();
 
-                data.append('id', this.id);
-                data.append('surname', this.surname);
-                data.append('name', this.name);
-                data.append('file', this.file);
-                registerUser(data).then(response => {
-                    let data = response.data;
-                    let user_id = data.id;
-                    let uuid = data.uuid;
-                    setCookie(KEY_USER_NAME + this.id, this.name + '_' + this.surname);
-                    setCookie(KEY_VIEWER_ID + this.id, user_id);
-                    setCookie(KEY_UUID + this.id, uuid);
-                    setCookie(KEY_REGISTER_STEP + this.id, REGISTER_UUID);
-                    this.$router.push({
-                        path: '/complete/' + this.id
-                    });
-                });
+                let data = {
+                    id: this.id,
+                    surname: this.surname,
+                    name: this.name,
+                    //file: this.file
+                };
+
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'register',
+                    body: data
+                }));
             }
         },
-
-        watch: {
-            'surname': function (newVal) {
-                this.surname = newVal;
-                this.$v.$touch();
-                console.log(this.$v.surname.minlength);
-            }
-        }
     });
 
 </script>

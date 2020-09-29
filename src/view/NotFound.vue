@@ -60,13 +60,14 @@
                 name: null,
                 url: null,
                 file: null,
-                id: null
+                id: null,
             };
         },
 
         created() {
             console.log("Id is " + this.id);
             console.log(this.$route.params);
+
         },
 
         methods: {
@@ -77,7 +78,9 @@
                 if (this.$v.$invalid) {
                     return;
                 }
+
                 this.submitted = false;
+
                 let full_name = this.name + "_" + this.surname;
                 this.$router.push({
                     path: '/main?name=' + full_name
@@ -85,13 +88,7 @@
             }
         },
 
-        watch: {
-            'surname': function (newVal) {
-                this.surname = newVal;
-                this.$v.$touch();
-                console.log(this.$v.surname.minlength);
-            }
-        }
+
     });
 
 </script>

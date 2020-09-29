@@ -58,9 +58,8 @@
 <script>
     import Vue from 'vue';
     import {
-        getUserInfo,
-        updatePassword
-    } from '../api/user';
+        API_BASE
+    } from '../config/constants';
     import {validationMixin} from 'vuelidate';
     import {required, sameAs, maxLength, minLength} from 'vuelidate/lib/validators';
     import {getCookie} from '../util/support';
@@ -91,12 +90,29 @@
                 member_id: null,
                 money: 0,
                 flower: 0,
-                condolence: 0
+                condolence: 0,
+                connection: null
             };
         },
 
         created(){
-            this.getMemberInfo();
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                console.log(event);
+                let data = JSON.parse(event.data);
+                if(data.type == 'get_member') {
+                    if(data.status == true) {
+                        ref.updateData(data.content);
+                    }
+                } else if(data.type == 'change_password') {
+
+                }
+
+            };
+            this.connection.onopen = function(event) {
+                ref.getMemberInfo();
+            };
         },
 
         beforeRouteEnter (to, from, next) {
@@ -112,6 +128,29 @@
         },
 
         methods: {
+            updateData(data) {
+                let user = data.user[0];
+                let full_name = user.name;
+                let split = full_name.split('_');
+                this.name = split[0];
+                this.surname = split[1];
+                this.email = user.email;
+                this.mobile = user.mobile;
+                this.address = user.address;
+                this.post = user.post;
+                this.money = data.money.sum;
+                this.condolence = data.condolence.sum;
+                this.flower = data.flower.sum;
+                if(this.money == null) {
+                    this.money= 0;
+                }
+                if(this.condolence == null) {
+                    this.condolence= 0;
+                }
+                if(this.flower == null) {
+                    this.flower= 0;
+                }
+            },
             getMemberInfo() {
                 let id = getCookie(KEY_CURRENT_FUNERAL_ID);
                 this.member_id = getCookie(KEY_MEMBER_ID + id);
@@ -119,31 +158,12 @@
                     member_id: this.member_id,
                     id: id
                 };
-                getUserInfo(data).then(response => {
-                    let data = response.data;
-                    console.log(data);
-                    let user = data.user[0];
-                    let full_name = user.name;
-                    let split = full_name.split('_');
-                    this.name = split[0];
-                    this.surname = split[1];
-                    this.email = user.email;
-                    this.mobile = user.mobile;
-                    this.address = user.address;
-                    this.post = user.post;
-                    this.money = data.money.sum;
-                    this.condolence = data.condolence.sum;
-                    this.flower = data.flower.sum;
-                    if(this.money == null) {
-                        this.money= 0;
-                    }
-                    if(this.condolence == null) {
-                        this.condolence= 0;
-                    }
-                    if(this.flower == null) {
-                        this.flower= 0;
-                    }
-                })
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'get_member',
+                    body: data
+                }));
 
             },
             changePassword() {
@@ -153,14 +173,20 @@
                     return;
                 }
                 this.submitted = false;
+
                 if(this.password == this.confirm) {
+                    console.log("Change Password");
                     let data = {
                         member_id: this.member_id,
                         password: this.password
                     };
-                    updatePassword(data).then(response => {
-                        console.log(response);
-                    });
+                    this.connection.send(JSON.stringify({
+                        type: 'api',
+                        method: 'user',
+                        path: 'change_password',
+                        body: data
+                    }));
+
                 }
 
             },
