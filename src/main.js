@@ -13,7 +13,9 @@ import VueSocketIO from 'vue-socket.io';
 import Loading from 'vue-loading-overlay';
 // Import stylesheet
 import 'vue-loading-overlay/dist/vue-loading.css';
-
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue';
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
 Object.keys(components).forEach((key) => {
   var name = key.replace(/(\w)/, (v) => v.toUpperCase())
   Vue.component('v' + name, components[key])
@@ -24,6 +26,9 @@ import Vuelidate from 'vuelidate';
 Vue.use(Loading);
 Vue.use(Vuelidate);
 Vue.use(VueSimpleAlert);
+Vue.use(BootstrapVue)
+// Optionally install the BootstrapVue icon components plugin
+Vue.use(IconsPlugin)
 
 
 

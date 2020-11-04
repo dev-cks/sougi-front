@@ -63,5 +63,16 @@ ul {
   top: calc(50% - 24px) !important;
   right: calc(50% - 24px) !important;
 }
+
+  .full-page {
+    position: fixed;
+    top:0;
+    left: 0;
+    width: 100%;
+  }
+
+  .full-page header {
+    position: relative !important;
+  }
 </style>
 

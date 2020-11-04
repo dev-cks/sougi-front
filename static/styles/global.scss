@@ -77,6 +77,11 @@ header {
   z-index: 100;
 }
 
+.modal-header {
+  position: relative !important;
+  box-shadow: none !important;
+}
+
 header .container {
   display: flex;
   justify-content: space-between;

@@ -70,7 +70,7 @@
         </template>
         <template v-if="status == 3">
           <button  class="mt-2 login btn" @click="moveLive()">
-            葬儀中継に進む
+            葬儀を視聴する
           </button>
         </template>
 
@@ -85,6 +85,7 @@
 
 <script>
     import Vue from 'vue';
+
     import {
         API_BASE
     } from '../config/constants';
@@ -225,7 +226,9 @@
 
             },
             moveLive() {
-                window.location.href = LIVE_BASE + '/live.html?id=' + this.funeralInfo.id;
+                this.$router.push({
+                    path: `/live/stream/${this.funeralInfo.id}`,
+                });
             }
         }
     });

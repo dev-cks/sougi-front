@@ -9,10 +9,9 @@ export function setSupport(isSupport) {
 }
 
 export function setCookie(key,value,expires) {
-  console.log("Expired is " + expires);
-  console.log("Cookie " + key + ":" + value);
+
   if(expires == undefined) {
-    return Cookies.set(key, value);
+    return Cookies.set(key, value, {expires: 365});
   }
   return Cookies.set(key, value,{ expires: expires})
 }

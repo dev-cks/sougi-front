@@ -40,7 +40,7 @@
     import {validationMixin} from 'vuelidate';
     import {required, email, maxLength, minLength} from 'vuelidate/lib/validators';
     import {
-        API_BASE
+        API_BASE, KEY_USER_MOBILE
     } from '../config/constants';
     import {getCookie, setCookie} from '../util/support';
     import {KEY_ALLOW_COOKIE, KEY_MEMBER_ID, KEY_USER_NAME, KEY_UUID, KEY_VIEWER_ID} from "../config/constants";
@@ -96,6 +96,7 @@
                 setCookie(KEY_UUID + id, uuid);
                 setCookie(KEY_VIEWER_ID + id, viewer_id);
                 setCookie(KEY_ALLOW_COOKIE, 1);
+                setCookie(KEY_USER_MOBILE + id, data.mobile);
                 this.$router.push({
                     path: '/incense/' + id
                 });

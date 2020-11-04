@@ -24,7 +24,7 @@
       <div class="mt-3">
         <h3>パスワード変更</h3>
         <div class="form-group d-flex-1 align-items-center">
-          <label for="password">メールアドレス</label>
+          <label for="password">パスワードを入力</label>
           <input type="password" class="ml-3-1 form-control" id="password" v-model="password">
           <div class="invalid-feedback d-block">
             <span v-if="submitted && !$v.password.required">Please insert password</span>
@@ -34,7 +34,7 @@
         </div>
 
         <div class="form-group d-flex-1 align-items-center">
-          <label for="confirm">パスワード</label>
+          <label for="confirm">確認パスワードの入力</label>
           <input type="password" class="ml-3-1 form-control" id="confirm" v-model="confirm">
           <div class="invalid-feedback d-block">
             <span v-if="submitted && !$v.confirm.required">Please insert password confirm</span>

@@ -1,0 +1,151 @@
+<template>
+  <div class="form">
+
+
+
+
+    <div class="form-group d-flex-1 align-items-center">
+      <label for="mobile">お電話番号</label>
+      <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile">
+      <div class="invalid-feedback d-block">
+        <span v-if="submitted && !$v.mobile.required">Please insert mobile number</span>
+        <span v-else>&nbsp;</span>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <button class="mt-2 btn background-main" @click="submit()">決定する</button>
+    </div>
+
+
+  </div>
+
+
+</template>
+
+<script>
+    import Vue from 'vue';
+    import {
+        API_BASE
+    } from '../../config/constants';
+    import {validationMixin} from 'vuelidate';
+    import {required, maxLength, minLength} from 'vuelidate/lib/validators';
+    import {setCookie} from "../../util/support";
+    import {
+        KEY_CAMERA_ID,
+        KEY_CAMERA_MOBILE,
+        KEY_CAMERA_PORT,
+        KEY_MANAGE_CAMERA, KEY_MANAGE_ID,
+        KEY_MANAGE_NAME, KEY_MANAGE_PORT
+    } from "../../config/constants";
+
+    export default Vue.extend({
+        mixins: [validationMixin],
+        validations: {
+            mobile: {
+                required
+            }
+        },
+        data() {
+            return {
+                submitted: false,
+                mobile: null,
+                connection: null,
+                loader: null
+            };
+        },
+
+        created() {
+            //removeCookie(KEY_ALLOW_COOKIE);
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                ref.loader.hide();
+                //this.isLoading = false;
+                let data = JSON.parse(event.data);
+                let json = data.content;
+                if(json.status == 2) {
+                    let info = json.info;
+                    setCookie(KEY_CAMERA_PORT, info.port);
+                    setCookie(KEY_CAMERA_ID, info.id);
+                    setCookie(KEY_CAMERA_MOBILE, this.mobile);
+                    ref.$router.push({
+                        path: '/live/camera',
+                    });
+                } else if(json.status == 1) {
+                    let info = json.info;
+                    setCookie(KEY_MANAGE_ID, info.id);
+                    setCookie(KEY_MANAGE_PORT, info.port);
+                    let camera_arr = [];
+                    if(info.camera_first_id > 0) {
+                        camera_arr.push(info.camera_first_id);
+                    }
+                    if(info.camera_second_id > 0) {
+                        camera_arr.push(info.camera_second_id);
+                    }
+                    if(info.camera_third_id > 0) {
+                        camera_arr.push(info.camera_third_id);
+                    }
+                    setCookie(KEY_MANAGE_CAMERA, camera_arr);
+                    setCookie(KEY_MANAGE_NAME, info.surname + " " + info.name);
+                    ref.$router.push({
+                        path: '/live/manage',
+                    });
+                }
+            };
+            this.connection.onopen = function(event) {
+            };
+        },
+
+        methods: {
+            createLoader() {
+                this.loader = this.$loading.show({
+                    // Optional parameters
+                    container: null,
+                    canCancel: true,
+                });
+            },
+            submit() {
+                this.submitted = true;
+                this.$v.$touch();
+                if (this.$v.$invalid) {
+                    return;
+                }
+
+                this.submitted = false;
+
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'channel',
+                    path: 'get_detail',
+                    body: {
+                        mobile: this.mobile
+                    }
+                }));
+                this.createLoader();
+
+            }
+        },
+
+
+    });
+
+</script>
+
+<style>
+
+  #preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid black;
+    width: 100%;
+    height: 300px;
+  }
+
+  #preview img {
+    width: 100%;
+    height: 100%;
+  }
+
+</style>

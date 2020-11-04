@@ -17,7 +17,10 @@ import Register from '@/view/Register'
 import RegisterConfirm from '@/view/RegisterConfirm'
 import Terms from '@/view/Terms'
 import NotFound from '@/view/NotFound';
-
+import LiveLogin from '@/view/Live/Login';
+import LiveManage from '@/view/Live/Manage';
+import LiveCamera from '@/view/Live/Camera';
+import LiveClient from '@/view/Live/Client';
 Vue.use(Router)
 
 export default new Router({
@@ -87,6 +90,22 @@ export default new Router({
     {
       path: '/teikei',
       component: Condolence
+    },
+    {
+      path: '/live/login',
+      component: LiveLogin
+    },
+    {
+      path: '/live/manage',
+      component: LiveManage
+    },
+    {
+      path: '/live/camera',
+      component: LiveCamera
+    },
+    {
+      path: '/live/stream/:id',
+      component: LiveClient
     },
     {
       path: '*',

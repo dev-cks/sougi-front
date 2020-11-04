@@ -125,10 +125,10 @@
                     return;
                 }
                 this.submitted = false;
-                if(this.file == null) {
-                    alert("Please add image file");
-                    return ;
-                }
+                // if(this.file == null) {
+                //     alert("Please add image file");
+                //     return ;
+                // }
                 this.id = this.$route.params.id;
 
                 let data = {

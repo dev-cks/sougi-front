@@ -1,0 +1,62 @@
+{
+  "_from": "fast-sound",
+  "_id": "fast-sound@1.0.3",
+  "_inBundle": false,
+  "_integrity": "sha512-iEXRP75eiGH0v3F64SfjpvVLWXHrrgqL1TPiz9jzeZF4WJwNBu9AlAJYGQlvf2/18E0iiepQO0O2XL5VxwFWYg==",
+  "_location": "/fast-sound",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "fast-sound",
+    "name": "fast-sound",
+    "escapedName": "fast-sound",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/fast-sound/-/fast-sound-1.0.3.tgz",
+  "_shasum": "acc96229deb6f253cd72c0e0fd481cc7a20e3746",
+  "_spec": "fast-sound",
+  "_where": "D:\\My Tasks\\2020\\0720\\sougi\\secure-app-client",
+  "author": {
+    "name": "Sergiy Kukunin",
+    "email": "sergey.kukunin@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/Kukunin/fast-sound/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "A collection of emscripten-compiled libraries: opus and speexdsp",
+  "devDependencies": {
+    "webpack": "^4.23.1",
+    "webpack-cli": "^3.1.2"
+  },
+  "homepage": "https://github.com/Kukunin/fast-sound#readme",
+  "keywords": [
+    "emscripten",
+    "libopus",
+    "opus",
+    "resampler",
+    "native",
+    "sound",
+    "audio"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "name": "fast-sound",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kukunin/fast-sound.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "webpack": "webpack"
+  },
+  "version": "1.0.3"
+}
