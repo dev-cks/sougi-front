@@ -3,14 +3,11 @@
     <vNavigation></vNavigation>
     <div class="form-group">
       <div id="preview">
-        <img v-if="url" :src="url"/>
-        <template v-else>
-
-        </template>
+        <canvas id="myCanvas"  width="480" height="600" style="border: 1px solid #ced4da" @mousedown="beginDrawing" @mousemove="keepDrawing" @mouseup="stopDrawing" />
 
       </div>
       <div class="d-flex justify-content-center">
-        <button class="mt-2 btn text-black" @click="$refs.file.click()">画像を挿入</button>
+        <button class="mt-2 btn text-black" @click="clearImage()">鮮明な画像</button>
       </div>
 
       <input type="file" @change="onFileChange" ref="file" style="display: none"/>
@@ -77,7 +74,8 @@
                 file: null,
                 id: null,
                 connection: null,
-                loader: null
+                loader: null,
+                canvas: null
             };
         },
 
@@ -94,8 +92,50 @@
             this.connection.onopen = function(event) {
             };
         },
+        mounted() {
+            var c = document.getElementById("myCanvas");
+            this.canvas = c.getContext('2d');
+        },
 
         methods: {
+            clearImage() {
+
+                let c = document.getElementById("myCanvas");
+
+                let ctx = this.canvas;
+                ctx.beginPath();
+                ctx.clearRect(0, 0, c.width, c.height);
+            },
+            drawLine(x1, y1, x2, y2) {
+                let ctx = this.canvas;
+                ctx.beginPath();
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 3;
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                ctx.closePath();
+            },
+            beginDrawing(e) {
+                this.x = e.offsetX;
+                this.y = e.offsetY;
+                this.isDrawing = true;
+            },
+            keepDrawing(e) {
+                if (this.isDrawing === true) {
+                    this.drawLine(this.x, this.y, e.offsetX, e.offsetY);
+                    this.x = e.offsetX;
+                    this.y = e.offsetY;
+                }
+            },
+            stopDrawing(e) {
+                if (this.isDrawing === true) {
+                    this.drawLine(this.x, this.y, e.offsetX, e.offsetY);
+                    this.x = 0;
+                    this.y = 0;
+                    this.isDrawing = false;
+                }
+            },
             createLoader() {
                 this.loader = this.$loading.show({
                     // Optional parameters
@@ -131,11 +171,14 @@
                 // }
                 this.id = this.$route.params.id;
 
+                let c = document.getElementById("myCanvas");
+                let src = c.toDataURL("image/png");
+
                 let data = {
                     id: this.id,
                     surname: this.surname,
                     name: this.name,
-                    //file: this.file
+                    file: src
                 };
 
                 this.connection.send(JSON.stringify({
@@ -153,18 +196,5 @@
 
 <style>
 
-  #preview {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid black;
-    width: 100%;
-    height: 300px;
-  }
-
-  #preview img {
-    width: 100%;
-    height: 100%;
-  }
 
 </style>
