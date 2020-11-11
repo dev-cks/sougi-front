@@ -195,6 +195,9 @@
 </script>
 
 <style>
-
+ #preview {
+   height: auto !important;
+   border: none !important;
+ }
 
 </style>
