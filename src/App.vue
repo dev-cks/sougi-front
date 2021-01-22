@@ -68,7 +68,9 @@ ul {
     position: fixed;
     top:0;
     left: 0;
+    bottom: 0;
     width: 100%;
+    overflow: auto;
   }
 
   .full-page header {

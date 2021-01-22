@@ -5,22 +5,25 @@
       <p>入力内容</p>
 
       <p>
-        苗字： {{surname}}
-      </p>
-      <p>
-        名前： {{name}}
-      </p>
-      <p>
-        メールアドレス： {{email}}
+        お名前： {{name}}
       </p>
       <p>
         お電話番号： {{mobile}}
       </p>
       <p>
-        ご住所： {{address}}
+        会社名： {{company_name}}
       </p>
       <p>
-        郵便番号： {{post}}
+        郵便番号： {{zip}}
+      </p>
+      <p>
+        住所： {{address}}
+      </p>
+      <p>
+        建物名など： {{build_name}}
+      </p>
+      <p>
+        会社の電話番号： {{telephone}}
       </p>
       <div class="d-flex justify-content-center">
         <button class="mt-2 btn text-black" @click="moveNext()">送信する</button>
@@ -40,17 +43,18 @@
         API_BASE
     } from '../config/constants';
     import {getCookie, setCookie} from '../util/support';
-    import {KEY_MEMBER_ID, KEY_MEMBER_ID_PRE, KEY_REGISTER_STEP, REGISTER_FINISH} from '../config/constants';
+    import {KEY_VIEWER_ID, KEY_MEMBER_ID, KEY_MEMBER_ID_PRE, KEY_REGISTER_STEP, REGISTER_FINISH} from '../config/constants';
     export default Vue.extend({
         data() {
             return {
                 id: this.$route.params.id,
-                email: null,
-                surname: null,
                 name: null,
-                mobile: null,
+                company_name: null,
+                zip: null,
                 address: null,
-                post: null,
+                build_name: null,
+                telephone: null,
+                mobile: null,
                 connection: null,
                 loader: null
             };
@@ -81,16 +85,18 @@
             },
             updateData(data) {
                 console.log(data);
-                let full_name = data.name;
-                let split = full_name.split('_');
-                this.name = split[0];
-                this.surname = split[1];
-                this.email = data.email;
+                let full_name = data.name;;
+                this.name = full_name
                 this.mobile = data.mobile;
                 this.address = data.address;
-                this.post = data.post;
+                this.zip = data.zip;
+                this.company_name = data.company_name;
+                this.build_name = data.build_name;
+                this.telephone = data.telephone;
+
             },
             getMemberInfo() {
+                console.log("Memeber id is " + getCookie(KEY_VIEWER_ID + this.id));
                 let member_id = getCookie(KEY_MEMBER_ID_PRE + this.id);
                 let data = {
                     member_id: member_id

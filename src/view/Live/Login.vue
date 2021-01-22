@@ -3,12 +3,28 @@
 
 
 
-
     <div class="form-group d-flex-1 align-items-center">
+      <label for="type">ユーザー種類</label>
+      <select class="form-control" id="type" v-model="type">
+        <option value="1">喪主</option>
+        <option value="2">撮影が</option>
+      </select>
+
+    </div>
+    <div class="form-group d-flex-1 align-items-center" v-if="type == 2">
       <label for="mobile">お電話番号</label>
       <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile">
       <div class="invalid-feedback d-block">
         <span v-if="submitted && !$v.mobile.required">Please insert mobile number</span>
+        <span v-else>&nbsp;</span>
+      </div>
+    </div>
+
+    <div class="form-group d-flex-1 align-items-center">
+      <label for="mobile">訃報ID</label>
+      <input type="text" class="ml-3-1 form-control" id="code" v-model="code">
+      <div class="invalid-feedback d-block">
+        <span v-if="submitted && !$v.code.required">Please insert funeral id</span>
         <span v-else>&nbsp;</span>
       </div>
     </div>
@@ -44,12 +60,17 @@
         validations: {
             mobile: {
                 required
+            },
+            code: {
+                required
             }
         },
         data() {
             return {
                 submitted: false,
+                type: 1,
                 mobile: null,
+                code: null,
                 connection: null,
                 loader: null
             };
@@ -67,8 +88,9 @@
                 if(json.status == 2) {
                     let info = json.info;
                     setCookie(KEY_CAMERA_PORT, info.port);
-                    setCookie(KEY_CAMERA_ID, info.id);
-                    setCookie(KEY_CAMERA_MOBILE, this.mobile);
+                    //setCookie(KEY_CAMERA_ID, info.id);
+                    setCookie(KEY_CAMERA_MOBILE, ref.mobile);
+                    console.log("Set cookie is " + ref.mobile);
                     ref.$router.push({
                         path: '/live/camera',
                     });
@@ -77,17 +99,17 @@
                     setCookie(KEY_MANAGE_ID, info.id);
                     setCookie(KEY_MANAGE_PORT, info.port);
                     let camera_arr = [];
-                    if(info.camera_first_id > 0) {
-                        camera_arr.push(info.camera_first_id);
+                    if(info.camera1 > 0) {
+                        camera_arr.push(info.camera1);
                     }
-                    if(info.camera_second_id > 0) {
-                        camera_arr.push(info.camera_second_id);
+                    if(info.camera2 > 0) {
+                        camera_arr.push(info.camera2);
                     }
-                    if(info.camera_third_id > 0) {
-                        camera_arr.push(info.camera_third_id);
+                    if(info.camera3 > 0) {
+                        camera_arr.push(info.camera3);
                     }
                     setCookie(KEY_MANAGE_CAMERA, camera_arr);
-                    setCookie(KEY_MANAGE_NAME, info.surname + " " + info.name);
+                    setCookie(KEY_MANAGE_NAME, info.name);
                     ref.$router.push({
                         path: '/live/manage',
                     });
@@ -107,9 +129,16 @@
             },
             submit() {
                 this.submitted = true;
+                if(this.type == 1) {
+                    this.mobile = '1234';
+                }
                 this.$v.$touch();
                 if (this.$v.$invalid) {
                     return;
+                }
+
+                if(this.type == 1) {
+                    this.mobile = '';
                 }
 
                 this.submitted = false;
@@ -119,7 +148,9 @@
                     method: 'channel',
                     path: 'get_detail',
                     body: {
-                        mobile: this.mobile
+                        mobile: this.mobile,
+                        code: this.code,
+                        type: this.type
                     }
                 }));
                 this.createLoader();

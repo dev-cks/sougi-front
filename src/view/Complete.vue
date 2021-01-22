@@ -28,7 +28,7 @@
 
 
           <div class="invalid-feedback d-block">
-            <span v-if="submitted && !$v.mobile.required">Please insert verification code</span>
+            <span v-if="submitted && !$v.code.required">Please insert verification code</span>
             <span v-else>&nbsp;</span>
           </div>
         </div>
@@ -81,26 +81,39 @@
         },
 
         created(){
-            this.connection = new WebSocket(API_BASE);
-            let ref = this;
-            this.connection.onmessage = function(event) {
-                console.log(event);
-                let data = JSON.parse(event.data);
-                if(data.type == 'check_code') {
-                    ref.loader.hide();
-                    if(data.content.status == true) {
-                        ref.updateData();
-                    }
-
-                } else if(data.type == 'send_code') {
-
-                }
-            };
-            this.connection.onopen = function(event) {
-            };
+            this.socketConnection();
         },
 
         methods: {
+            socketConnection() {
+                this.connection = new WebSocket(API_BASE);
+                let ref = this;
+                this.connection.onmessage = function(event) {
+                    console.log(event);
+                    let data = JSON.parse(event.data);
+                    if(data.type == 'check_code') {
+                        ref.loader.hide();
+                        if(data.content.status == true) {
+                            ref.updateData();
+                        }
+
+                    } else if(data.type == 'send_code') {
+
+                    }
+                };
+                this.connection.onopen = function(event) {
+                };
+
+                this.connection.onclose = function(e) {
+                    setTimeout(function() {
+                        ref.socketConnection()
+                    }, 1000);
+                };
+
+                this.connection.onerror = function(err) {
+                    ref.connection.close();
+                };
+            },
             createLoader() {
                 this.loader = this.$loading.show({
                     // Optional parameters

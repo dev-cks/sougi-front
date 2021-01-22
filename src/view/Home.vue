@@ -8,55 +8,14 @@
     </section>
 
     <section id="huhou">
-      <div class="container funeral-info my-3 shadow">
-        <div class="d-flex align-items-center">
-          <div class="flex-1">お取引先各位</div>
-          <div>
-            <p>{{funeralInfo.create_time}}</p>
-            <p class="mt-2">{{funeralInfo.company_name}}</p>
-          </div>
-        </div>
 
 
-        <div class="py-2 text-center my-4">
-          訃報
-        </div>
-        <p>{{funeralInfo.contents}}</p>
-        <p class="text-right">敬具</p>
+      <div class="funeral">
 
-        <div class="pt-2 text-center my-4">
-          記
-        </div>
-
-        <div class="px-4">
-          <div class="row">
-            <div class="col-3">通夜</div>
-            <div class="col-9">{{funeralInfo.start_time}}</div>
-          </div>
-          <div class="row mt-3">
-            <div class="col-3">葬儀</div>
-            <div class="col-9">{{funeralInfo.funeral_start_time}}</div>
-          </div>
-          <div class="row mt-3">
-            <div class="col-3">住所</div>
-            <div class="col-9">
-              <p>{{funeralInfo.place_name}}</p>
-              <p>{{funeralInfo.place_address}}</p>
-              <p>{{funeralInfo.place_mobile}}</p>
-            </div>
-          </div>
-          <div class="row mt-3">
-            <div class="col-3">喪主</div>
-            <div class="col-9">{{funeralInfo.manager_name}}</div>
-          </div>
-
-          <div class="row mt-3">
-            <div class="col-3">連絡先</div>
-            <div class="col-9">{{funeralInfo.company_name}} {{funeralInfo.company_mobile}}</div>
-          </div>
-          <p class="text-right mt-3">以上</p>
+        <div class="funeral_body mt-2" v-html="funeralInfo.note">
         </div>
       </div>
+
       <div>
         <template v-if="status == 0 || status == 1">
           <button  class="gokicho btn" @click="moveRegister()">
@@ -75,6 +34,9 @@
         </template>
 
       </div>
+
+
+
     </section>
     <vFooter ref="footer"></vFooter>
   </div>
@@ -113,7 +75,7 @@
             return {
                 funeralInfo: {},
                 status: 0,
-                name: this.$route.query.name,
+                code: this.$route.query.code,
                 connection: null,
                 loader: null
             };
@@ -122,7 +84,7 @@
         created(){
             //removeCookie(KEY_ALLOW_COOKIE);
             console.log(this.$route.query);
-            setCookie(KEY_CURRENT_NAME, this.name);
+            setCookie(KEY_CURRENT_NAME, this.code);
             this.connection = new WebSocket(API_BASE);
             let ref = this;
             this.connection.onmessage = function(event) {
@@ -151,9 +113,9 @@
             },
             changeData(res) {
                 this.funeralInfo = res.data;
-                this.funeralInfo.create_time = Datetimes.getymd(this.funeralInfo.create_time);
-                this.funeralInfo.start_time = Datetimes.getmdwhs(this.funeralInfo.start_time);
-                this.funeralInfo.funeral_start_time = Datetimes.getmdwhs(this.funeralInfo.funeral_start_time);
+                // this.funeralInfo.create_time = Datetimes.getymd(this.funeralInfo.create_time);
+                // this.funeralInfo.start_time = Datetimes.getmdwhs(this.funeralInfo.start_time);
+                // this.funeralInfo.funeral_start_time = Datetimes.getmdwhs(this.funeralInfo.funeral_start_time);
                 this.getUserInfo(this.funeralInfo.id);
                 let funeral_id = this.funeralInfo.id;
                 let company_id = this.funeralInfo.company_id;
@@ -179,12 +141,11 @@
                         }
                     }
                 }
+                console.log(this.status);
             },
             getFuneralInfo(){
-                let split = this.name.split("_");
                 let data = {
-                    surname: split[1],
-                    name: split[0]
+                    code: this.code
                 };
                 this.connection.send(JSON.stringify({
                     type: 'api',
@@ -195,40 +156,50 @@
                 this.createLoader();
             },
             moveRegister() {
-                if(this.status == 1) {
-                    this.$router.push({
-                        path: `/bkeeping-pre/${this.funeralInfo.id}`,
-                    });
-                } else {
-                    this.$confirm(ALLOW_COOKIE).then(() => {
-                        setCookie(KEY_ALLOW_COOKIE, 1);
+                if(this.funeralInfo.id) {
+                    if(this.status == 1) {
                         this.$router.push({
                             path: `/bkeeping-pre/${this.funeralInfo.id}`,
                         });
-                    });
-                }
-            },
-            moveNext() {
-                let step = getCookie(KEY_REGISTER_STEP + this.funeralInfo.id);
-                if(step == REGISTER_UUID) {
-                    this.$router.push({
-                        path: `/complete/${this.funeralInfo.id}`,
-                    });
-                } else if(step == REGISTER_NEXT) {
-                    this.$router.push({
-                        path: `/notknowother/${this.funeralInfo.id}`,
-                    });
-                } else if(step == REGISTER_INFO) {
-                    this.$router.push({
-                        path: `/bkeeping/${this.funeralInfo.id}`,
-                    });
+                    } else {
+                        this.$confirm(ALLOW_COOKIE).then(() => {
+                            setCookie(KEY_ALLOW_COOKIE, 1);
+                            this.$router.push({
+                                path: `/bkeeping-pre/${this.funeralInfo.id}`,
+                            });
+                        });
+                    }
+                } else {
+
                 }
 
             },
+            moveNext() {
+                console.log(this.funeralInfo.id);
+                if(this.funeralInfo.id) {
+                    let step = getCookie(KEY_REGISTER_STEP + this.funeralInfo.id);
+                    if(step == REGISTER_UUID) {
+                        this.$router.push({
+                            path: `/complete/${this.funeralInfo.id}`,
+                        });
+                    } else if(step == REGISTER_NEXT) {
+                        this.$router.push({
+                            path: `/notknowother/${this.funeralInfo.id}`,
+                        });
+                    } else if(step == REGISTER_INFO) {
+                        this.$router.push({
+                            path: `/bkeeping/${this.funeralInfo.id}`,
+                        });
+                    }
+                }
+            },
             moveLive() {
-                this.$router.push({
-                    path: `/live/stream/${this.funeralInfo.id}`,
-                });
+                if(this.funeralInfo.id) {
+                    this.$router.push({
+                        path: `/live/stream/${this.funeralInfo.id}`,
+                    });
+                }
+
             }
         }
     });
@@ -242,6 +213,9 @@
     font-size: 12px;
   }
 
+  .funeral_body img {
+    width: 100%;
+  }
   .login {
     color: var(--main-color);
   }

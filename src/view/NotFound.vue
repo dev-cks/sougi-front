@@ -5,6 +5,9 @@
 
 
     <div class="form-group d-flex-1 align-items-center">
+      <h3 class="text-align-center mb-3">故人の姓名を入力してください。</h3>
+    </div>
+    <div class="form-group d-flex-1 align-items-center">
       <label for="surname">姓</label>
       <input type="text" class="ml-3-1 form-control" id="surname" v-model="surname">
       <div class="invalid-feedback d-block">
@@ -107,6 +110,10 @@
   #preview img {
     width: 100%;
     height: 100%;
+  }
+
+  .text-align-center {
+    text-align: center;
   }
 
 </style>

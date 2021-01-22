@@ -144,12 +144,6 @@
                 }));
                 this.createLoader();
             },
-
-            moveNext() {
-                this.$router.push({
-                    path: '/incense/' + this.id
-                });
-            }
         }
     });
 

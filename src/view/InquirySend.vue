@@ -56,19 +56,33 @@
             let funeral_id = getCookie(KEY_CURRENT_FUNERAL_ID);
             this.member_id = getCookie(KEY_MEMBER_ID + funeral_id);
             console.log(this.member_id);
+            this.socketConnection();
 
 
-            this.connection = new WebSocket(API_BASE);
-            this.connection.onmessage = function(event) {
-                ref.loader.hide();
-                let data = JSON.parse(event.data);
-                console.log(data);
-            };
-            this.connection.onopen = function(event) {
-            };
         },
 
         methods: {
+            socketConnection() {
+                let ref = this;
+                this.connection = new WebSocket(API_BASE);
+                this.connection.onmessage = function(event) {
+                    ref.loader.hide();
+                    let data = JSON.parse(event.data);
+                    console.log(data);
+                };
+                this.connection.onopen = function(event) {
+                };
+
+                this.connection.onclose = function(e) {
+                    setTimeout(function() {
+                        ref.socketConnection()
+                    }, 1000);
+                };
+
+                this.connection.onerror = function(err) {
+                    ref.connection.close();
+                };
+            },
             createLoader() {
                 this.loader = this.$loading.show({
                     // Optional parameters

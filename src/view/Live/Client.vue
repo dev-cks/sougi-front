@@ -27,15 +27,54 @@
 
       </b-collapse>
     </b-navbar>
-    <div class="position-relative">
-      <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
-      <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
-        <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
+
+
+    <div class="half-height" ref="video-container">
+      <div class="position-relative canvas-container" v-show="show_status == true">
+        <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
+        <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
+          <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
+        </div>
+        <audio id="_background" ref="background" hidden></audio><br>
       </div>
+
+      <div class="h-100" v-show="show_status == false">
+        <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
+
+          <div class="text-align-center">
+            <h3>配信中止中です。</h3>
+            <button class="btn-danger">非公開中</button>
+          </div>
+
+
+        </div>
+      </div>
+
     </div>
 
-    <audio id="_background" ref="background" hidden></audio><br>
 
+
+
+    <div class="half-height">
+      <VueSlickCarousel v-bind="settings" v-show="public_status == true"  v-if="imgList.length>0">
+        <div v-for="element in imgList" :key="element.id" class="text-center d-flex flex-column align-items-center justify-content-center">
+          <img :src="element.img" alt="画像はありません" class="w-50 max-height">
+          <h6 class="text-center">{{element.title?element.title:''}}</h6>
+        </div>
+      </VueSlickCarousel>
+      <div class="h-100" v-show="public_status == false">
+        <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
+
+          <div class="text-align-center">
+            <h3>アルバムがありません。</h3>
+            <button class="btn-danger">非公開中</button>
+          </div>
+
+
+        </div>
+      </div>
+
+    </div>
 
     <b-sidebar
       id="sidebar"
@@ -85,8 +124,11 @@
     import Audio from '../../util/audio';
     import Video from '../../util/video';
     import Anim from '../../util/anim';
+    import VueSlickCarousel from 'vue-slick-carousel'
+    import 'vue-slick-carousel/dist/vue-slick-carousel.css'
+
     import {
-        API_BASE,
+        API_BASE, ADMIN_BASE,
         KEY_CAMERA_ID, KEY_CAMERA_PORT,
         KEY_MANAGE_CAMERA,
         KEY_MANAGE_ID,
@@ -94,9 +136,15 @@
         LIVE_BASE
     } from "../../config/constants";
     import Core from "../../util/core";
+
     export default Vue.extend({
+        components: {
+            VueSlickCarousel
+        },
         data() {
             return {
+                public_status: false,
+                show_status: true,
                 id: null,
                 ws0: null,
                 ws1: null,
@@ -122,14 +170,49 @@
                 locale: null,
                 startTime: null,
                 sumDuration: 0,
+                imgList: [],
+                timerInterval: null,
                 videoSize: {
-                    w: 450,
-                    h: 800
-                }
+                    w: 640,
+                    h: 480
+                },
+
+                settings: {
+                    arrows: false,
+                    dots: false,
+                    autoplay: true,
+                    autoplaySpeed: 3000
+                },
+                connection: null,
             };
         },
 
         created() {
+
+            this.connection = new WebSocket(API_BASE);
+            let ref = this;
+            this.connection.onmessage = function(event) {
+                //this.isLoading = false;
+                let data = JSON.parse(event.data);
+                if(data.status == true) {
+                    let json = data.content;
+                    ref.show_status = json.show_status;
+                    ref.public_status = json.public_status;
+                    ref.imgList = json.imgList;
+                    for(var i = 0; i < json.imgList.length; i ++) {
+                        ref.imgList[i].img = ADMIN_BASE + '/' + json.imgList[i].img;
+                    }
+                    console.log(ref.imgList);
+                }
+
+
+            };
+            this.connection.onopen = function(event) {
+                ref.getStatus();
+            };
+
+
+
             this.id = this.$route.params.id;
             this.mobile = getCookie(KEY_USER_MOBILE + this.id);
 
@@ -143,9 +226,21 @@
             this.receiveClient();
             this.receiveOpus();
             this.receiveMjpeg();
+
+            this.timerInterval = setInterval(() => (ref.getStatus()), 1000 * 60);
         },
 
         methods: {
+            getStatus() {
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'channel',
+                    path: 'get_status',
+                    body: {
+                        id: this.id
+                    }
+                }));
+            },
             onEnded() {
                 this.playing = false;
                 if(this.audioBuffer.length > 0) {
@@ -404,10 +499,23 @@
                             var img = new Image();
                             img.onload = function() {
                                 let _canvas = ref.$refs["canvas"];
-                                _canvas.width = img.width;
-                                _canvas.height = img.height;
+                                let videos_container = ref.$refs["video-container"];
+                                let window_height = videos_container.clientHeight - 32;
+                                let window_width = videos_container.clientWidth - 32;
+                                console.log(window_width + ":" + window_height);
+                                let scale_x = window_width / img.width;
+                                let scale_y = window_height /img.height;
+                                let scale = scale_x;
+                                if(scale_x > scale_y) {
+                                    scale = scale_y;
+                                }
+                                if(scale > 1) {
+                                    scale = 1;
+                                }
+                                _canvas.width = img.width * scale;
+                                _canvas.height = img.height * scale;
                                 const canvasCtx = _canvas.getContext('2d');
-                                canvasCtx.drawImage(img, 0, 0, img.width, img.height);
+                                canvasCtx.drawImage(img, 0, 0, img.width * scale, img.height * scale);
                                 if (Anim.hasPlaying()) Anim.draw(canvasCtx);
                             }
                             img.src = URL.createObjectURL(e.data.blob);
@@ -545,5 +653,24 @@
 #_default_video {
   width: 100%;
 }
+
+  .half-height {
+    height: 50%;
+  }
+
+  .canvas-container {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  h3 {
+    color: white;
+  }
+
+  .text-align-center {
+    text-align: center;
+  }
 
 </style>

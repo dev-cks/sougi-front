@@ -20,7 +20,11 @@
       </b-collapse>
     </b-navbar>
 
-    <canvas id="_canvas" ref="canvas"></canvas><br>
+    <div class="canvas-container">
+      <canvas id="_canvas" ref="canvas"></canvas><br>
+    </div>
+
+
     <video id="_video" ref="video" muted hidden></video><br>
     <audio id="_audio" ref="audio" hidden></audio>
   </div>
@@ -33,7 +37,7 @@
     import Video from '../../util/video';
     import {
         API_BASE,
-        KEY_CAMERA_ID, KEY_CAMERA_PORT,
+        KEY_CAMERA_ID, KEY_CAMERA_PORT, KEY_CAMERA_MOBILE,
         KEY_MANAGE_CAMERA,
         KEY_MANAGE_ID,
         KEY_MANAGE_NAME,
@@ -44,11 +48,11 @@
         data() {
             return {
                 port: null,
-                id: null,
+                mobile: null,
                 cameraIndex: 0,
                 ws0: null,
                 ws1: null,
-                videoSize: {w: 450, h: 800},
+                videoSize: {w: 640, h: 480},
                 FPS: 20,
                 QUALITY: 0.5,
                 SAMPLE_RATE: 48000,
@@ -65,7 +69,7 @@
         },
 
         created() {
-            this.id = getCookie(KEY_CAMERA_ID);
+            this.mobile = getCookie(KEY_CAMERA_MOBILE);
             this.port = getCookie(KEY_CAMERA_PORT);
             this.ws0 = Core.worker();
             this.ws1 = Core.worker();
@@ -101,6 +105,8 @@
                 }
             },
             channelStart() {
+                console.log("Click start channel");
+                console.log(this.ws1.threadId);
                 if (this.ws1.threadId === undefined) {
                     //Core.show_alert(_alert, 'warning', 'Not opened.');
                     return;
@@ -156,11 +162,14 @@
                 list.forEach(e => {
                     let mobiles = JSON.parse(e.mobiles);
                     console.log(mobiles.length);
+                    console.log(this.mobiles);
+                    console.log(e.port);
+                    console.log(this.port);
+                    console.log(this.mobile);
 
                     if(e.port == this.port) {
                         for(var i = 0; i < mobiles.length; i ++) {
-
-                            if(mobiles[i] == this.id) {
+                            if(mobiles[i] == this.mobile) {
                                 this.ws1.threadId = e.threadId;
                                 console.log("Connected");
                                 //Core.show_alert(_alert, 'info', 'connected');
@@ -276,10 +285,21 @@
             grab() {
                 let _canvas = this.$refs["canvas"];
                 let _video = this.$refs["video"];
-                _canvas.width = this.videoSize.w;
-                _canvas.height = this.videoSize.h;
+                let window_height = window.innerHeight - 32;
+                let window_width = window.innerWidth - 32;
+                let scale_x = window_width / this.videoSize.w;
+                let scale_y = window_height / this.videoSize.h;
+                let scale = scale_x;
+                if(scale_x > scale_y) {
+                    scale = scale_y;
+                }
+                if(scale > 1) {
+                    scale = 1;
+                }
+                _canvas.width = this.videoSize.w * scale;
+                _canvas.height = this.videoSize.h * scale;
                 const canvasCtx = _canvas.getContext('2d');
-                canvasCtx.drawImage(_video, 0, 0, this.videoSize.w, this.videoSize.h);
+                canvasCtx.drawImage(_video, 0, 0, this.videoSize.w * scale, this.videoSize.h * scale);
                 //
                 //todo: another image processes
                 //
@@ -316,5 +336,10 @@
 </script>
 
 <style scoped>
-
+  .canvas-container {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>

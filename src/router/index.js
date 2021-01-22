@@ -10,6 +10,7 @@ import Inquiry from '@/view/Inquiry'
 import InquirySend from '@/view/InquirySend'
 import Line from '@/view/Line'
 import Login from '@/view/Login'
+import LoginCode from '@/view/LoginCode'
 import Notation from '@/view/Notation'
 import Privacy from '@/view/Privacy'
 import Profile from '@/view/Profile'
@@ -21,9 +22,12 @@ import LiveLogin from '@/view/Live/Login';
 import LiveManage from '@/view/Live/Manage';
 import LiveCamera from '@/view/Live/Camera';
 import LiveClient from '@/view/Live/Client';
+import store from '../store';
+import auth from './middleware/auth';
+import middlewarePipeline from './middlewarePipeline'
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
 
   routes: [
     {
@@ -33,7 +37,7 @@ export default new Router({
     },
     {
       path: '/user-info/',
-      component: Profile
+      component: Profile,
     },
     {
       path: '/inquiry',
@@ -69,7 +73,7 @@ export default new Router({
     },
     {
       path: '/login/:id',
-      component: Login
+      component: LoginCode
     },
     {
       path: '/bkeeping-pre/:id',
@@ -113,3 +117,29 @@ export default new Router({
     }
   ]
 })
+
+
+router.beforeEach((to, from, next) => {
+  if (!to.meta.middleware) {
+    return next()
+  }
+  const middleware = to.meta.middleware
+
+  const context = {
+    to,
+    from,
+    next,
+    store
+  }
+
+
+  return middleware[0]({
+    ...context,
+    next: middlewarePipeline(context, middleware, 1)
+  })
+
+})
+
+
+
+export default router

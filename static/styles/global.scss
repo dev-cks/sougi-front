@@ -180,7 +180,9 @@ header h1 {
     overflow-x: hidden;
   }
 
-
+  footer {
+    height: 150px;
+  }
 }
 
 /* ナビゲーションメニュー（PC) */
@@ -196,6 +198,10 @@ header h1 {
 
   .nav-button {
     display: none;
+  }
+
+  footer {
+    height: 120px;
   }
 
 }
@@ -217,7 +223,6 @@ header h1 {
 
 /* フッター */
 footer {
-  height: 120px;
   margin-top: 60px;
   padding: 15px 0;
   background: #b7b7b7;

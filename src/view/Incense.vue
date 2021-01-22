@@ -44,6 +44,10 @@
 
       </form>
 
+      <button  class="mt-2 login btn" @click="moveLive()">
+        葬儀を視聴する
+      </button>
+
     </div>
 
 
@@ -122,6 +126,11 @@
                     body: data
                 }));
                 this.createLoader();
+            },
+            moveLive() {
+                this.$router.push({
+                    path: `/live/stream/${this.id}`,
+                });
             },
 
             moveNext() {

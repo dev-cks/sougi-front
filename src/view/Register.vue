@@ -3,7 +3,8 @@
     <vNavigation></vNavigation>
     <div class="form-group">
       <div id="preview">
-        <canvas id="myCanvas"  width="480" height="600" style="border: 1px solid #ced4da" @mousedown="beginDrawing" @mousemove="keepDrawing" @mouseup="stopDrawing" />
+        <VueSignaturePad  ref="signaturePad"  width="480px" height="600px" style="border: 1px solid #ced4da"
+        />
 
       </div>
       <div class="d-flex justify-content-center">
@@ -14,18 +15,10 @@
     </div>
 
 
-    <div class="form-group d-flex-1 align-items-center">
-      <label for="surname">姓</label>
-      <input type="text" class="ml-3-1 form-control" id="surname" v-model="surname">
-      <div class="invalid-feedback d-block">
-        <span v-if="submitted && !$v.surname.required">Please insert surname</span>
-        <span v-else-if="submitted && !$v.surname.minLength">Surname require at least {{$v.surname.$params.minLength.min}} length</span>
-        <span v-else>&nbsp;</span>
-      </div>
-    </div>
+
 
     <div class="form-group d-flex-1 align-items-center">
-      <label for="name">名</label>
+      <label for="name">お名前</label>
       <input type="text" class="ml-3-1 form-control" id="name" v-model="name">
       <div class="invalid-feedback d-block">
         <span v-if="submitted && !$v.name.required">Please insert name</span>
@@ -33,6 +26,7 @@
         <span v-else>&nbsp;</span>
       </div>
     </div>
+
 
     <div class="d-flex justify-content-center">
       <button class="mt-2 btn background-main" @click="submit()">記帳デ一タを送信</button>
@@ -58,18 +52,20 @@
     export default Vue.extend({
         mixins: [validationMixin],
         validations: {
-            surname: {
-                required, minLength: minLength(1)
-            },
             name: {
                 required, minLength: minLength(1)
-            }
+            },
+
         },
         data() {
             return {
                 submitted: false,
-                surname: null,
                 name: null,
+                company_name: null,
+                zip: null,
+                address: null,
+                build_name: null,
+                telephone: null,
                 url: null,
                 file: null,
                 id: null,
@@ -80,17 +76,7 @@
         },
 
         created() {
-            this.connection = new WebSocket(API_BASE);
-            let ref = this;
-            this.connection.onmessage = function(event) {
-                ref.loader.hide();
-                let data = JSON.parse(event.data);
-                if(data.status == true) {
-                    ref.updateData(data);
-                }
-            };
-            this.connection.onopen = function(event) {
-            };
+            this.socketConnection();
         },
         mounted() {
             var c = document.getElementById("myCanvas");
@@ -98,13 +84,31 @@
         },
 
         methods: {
+            socketConnection() {
+                this.connection = new WebSocket(API_BASE);
+                let ref = this;
+                this.connection.onmessage = function(event) {
+                    ref.loader.hide();
+                    let data = JSON.parse(event.data);
+                    if(data.status == true) {
+                        ref.updateData(data);
+                    }
+                };
+                this.connection.onopen = function(event) {
+                };
+
+                this.connection.onclose = function(e) {
+                    setTimeout(function() {
+                        ref.socketConnection()
+                    }, 1000);
+                };
+
+                this.connection.onerror = function(err) {
+                    ref.connection.close();
+                };
+            },
             clearImage() {
-
-                let c = document.getElementById("myCanvas");
-
-                let ctx = this.canvas;
-                ctx.beginPath();
-                ctx.clearRect(0, 0, c.width, c.height);
+                this.$refs.signaturePad.clearSignature();
             },
             drawLine(x1, y1, x2, y2) {
                 let ctx = this.canvas;
@@ -150,7 +154,7 @@
             updateData(data) {
                 let user_id = data.id;
                 let uuid = data.uuid;
-                setCookie(KEY_USER_NAME + this.id, this.name + '_' + this.surname);
+                setCookie(KEY_USER_NAME + this.id, this.name);
                 setCookie(KEY_VIEWER_ID + this.id, user_id);
                 setCookie(KEY_UUID + this.id, uuid);
                 setCookie(KEY_REGISTER_STEP + this.id, REGISTER_UUID);
@@ -170,22 +174,20 @@
                 //     return ;
                 // }
                 this.id = this.$route.params.id;
+                const { isEmpty, data } = this.$refs.signaturePad.saveSignature();
+                //let src = c.toDataURL("image/png");
 
-                let c = document.getElementById("myCanvas");
-                let src = c.toDataURL("image/png");
-
-                let data = {
+                let postData = {
                     id: this.id,
-                    surname: this.surname,
                     name: this.name,
-                    file: src
+                    file: data
                 };
 
                 this.connection.send(JSON.stringify({
                     type: 'api',
                     method: 'user',
                     path: 'register',
-                    body: data
+                    body: postData
                 }));
                 this.createLoader();
             }

@@ -176,6 +176,10 @@ header h1 {
   html, body {
     overflow-x: hidden;
   }
+
+  footer {
+    height: 150px;
+  }
 }
 /* ナビゲーションメニュー（PC) */
 @media (min-width: 768px) {
@@ -190,6 +194,10 @@ header h1 {
 
   .nav-button {
     display: none;
+  }
+
+  footer {
+    height: 120px;
   }
 }
 /* ボタン */
@@ -209,7 +217,6 @@ header h1 {
 
 /* フッター */
 footer {
-  height: 120px;
   margin-top: 60px;
   padding: 15px 0;
   background: #b7b7b7;

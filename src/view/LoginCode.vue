@@ -5,24 +5,32 @@
 
 
       <div class="form-group d-flex-1 align-items-center">
-        <label for="email">メールアドレス</label>
-        <input type="text" class="ml-3-1 form-control" id="email" v-model="email">
+        <label for="mobile">お電話番号</label>
+        <div class="d-flex">
+          <input type="number" class="ml-3-1 form-control" id="mobile" v-model="mobile" >
+          <button class="ml-2 btn-danger rounded" @click="sendCode()" :disabled="!isEnabled">Send</button>
+        </div>
+        <span v-if="!isEnabled">{{convertTime(timeRemain)}}</span>
+        <span v-else>&nbsp;</span>
+
         <div class="invalid-feedback d-block">
-          <span v-if="submitted && !$v.email.required">Please insert email</span>
-          <span v-else-if="submitted && !$v.email.email">Please insert valid email</span>
+          <span v-if="(submitted || submitCode) && !$v.mobile.required">Please insert phone number</span>
           <span v-else>&nbsp;</span>
         </div>
       </div>
 
       <div class="form-group d-flex-1 align-items-center">
-        <label for="password">パスワード</label>
-        <input type="password" class="ml-3-1 form-control" id="password" v-model="password">
+        <label for="mobile">検証コード</label>
+        <input type="number" class="ml-3-1 form-control" id="code" v-model="code" >
+
+
+
         <div class="invalid-feedback d-block">
-          <span v-if="submitted && !$v.password.required">Please insert password</span>
-          <span v-else-if="submitted && !$v.password.minLength">Password require at least {{$v.password.$params.minLength.min}} length</span>
+          <span v-if="submitted && !$v.code.required">Please insert verification code</span>
           <span v-else>&nbsp;</span>
         </div>
       </div>
+
 
       <div class="d-flex justify-content-center">
         <button class="mt-2 btn background-main" @click="submit()">ログインする</button>
@@ -47,25 +55,28 @@
     export default Vue.extend({
         mixins: [validationMixin],
         validations: {
-            email: {
-                required, email
+            mobile: {
+                required
             },
-            password: {
-                required, minLength: minLength(8)
-            }
+            code: {
+                required
+            },
         },
         data() {
             return {
                 submitted: false,
-                email: null,
-                password: null,
+                submitCode: false,
+                mobile: null,
+                code: null,
                 connection: null,
-                loader: null
+                loader: null,
+                isEnabled: true,
+                timeRemain: 0
             };
         },
 
         created(){
-           this.socketConnection();
+            this.socketConnection();
         },
 
         methods: {
@@ -73,10 +84,16 @@
                 this.connection = new WebSocket(API_BASE);
                 let ref = this;
                 this.connection.onmessage = function(event) {
-                    ref.loader.hide();
+                    console.log(event);
                     let data = JSON.parse(event.data);
-                    if(data.status == true) {
-                        ref.updateData(data.content);
+                    if(data.type == 'login_code') {
+                        ref.loader.hide();
+                        if(data.status == true) {
+                            ref.updateData(data.data);
+                        }
+
+                    } else if(data.type == 'send_code') {
+
                     }
                 };
                 this.connection.onopen = function(event) {
@@ -99,11 +116,33 @@
                     canCancel: true,
                 });
             },
+            countDown() {
+                this.timeRemain = this.timeRemain - 1;
+                if(this.timeRemain == 0) {
+                    this.isEnabled = true;
+                } else {
+                    setTimeout(this.countDown, 1000);
+                }
+            },
+            convertTime(time) {
+                let str = '';
+                if(time < 60) {
+                    str = time + ' second';
+                } else {
+                    let minutes = Math.floor(time / 60);
+                    str = minutes + " minutes";
+                    if(time % 60 != 0) {
+                        str = str + " " + (time % 60) + ' second';
+                    }
+
+                }
+                return str + ' left';
+            },
             updateData(data) {
                 let id = this.$route.params.id;
                 let uuid = data.uuid;
                 let member_id = data.id;
-                let viewer_id = data.viewer_id;
+                let viewer_id = member_id;
                 setCookie(KEY_USER_NAME + id, data.name);
                 setCookie(KEY_MEMBER_ID + id, member_id);
                 setCookie(KEY_UUID + id, uuid);
@@ -123,18 +162,41 @@
                 this.submitted = false;
                 let id = this.$route.params.id;
                 let data = {
-                    id: id,
-                    email: this.email,
-                    password: this.password
+                    mobile: this.mobile,
+                    code: this.code,
+                    id: id
                 };
-
                 this.connection.send(JSON.stringify({
                     type: 'api',
                     method: 'user',
-                    path: 'login',
+                    path: 'login_code',
                     body: data
                 }));
                 this.createLoader();
+            },
+            sendCode() {
+
+                console.log("Click send");
+                this.submitCode = true;
+                this.$v.$touch();
+                if (!this.$v.mobile.required) {
+                    return;
+                }
+                this.submitCode = false;
+
+                let data = {
+                    mobile: this.mobile
+                }
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'user',
+                    path: 'send_code',
+                    body: data
+                }));
+
+                this.isEnabled = false;
+                this.timeRemain = 60 * 5;
+                setTimeout(this.countDown, 1000);
             }
         }
     });

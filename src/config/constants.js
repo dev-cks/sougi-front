@@ -3,7 +3,9 @@
 // export const LIVE_BASE = 'https://alb.heart-warming.jp:8443';
 export const API_BASE = 'wss://alb.heart-warming.jp:8444';
 export const LIVE_BASE = 'https://alb.heart-warming.jp:8443';
+export const ADMIN_BASE = 'https://alb.heart-warming.jp:8445';
 // export const API_BASE = 'ws://localhost:8001';
+// export const ADMIN_BASE = 'http://localhost:8002';
 // export const LIVE_BASE = 'http://localhost:8000';
 export const KEY_ALLOW_COOKIE = "sougi-cookie";
 

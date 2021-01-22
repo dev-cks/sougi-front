@@ -51,7 +51,7 @@
             moveTop() {
                 let name = getCookie(KEY_CURRENT_NAME);
                 this.$router.push({
-                    path: '/main?name=' + name
+                    path: '/main?code=' + name
                 });
             },
 
