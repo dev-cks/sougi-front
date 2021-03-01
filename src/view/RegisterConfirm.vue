@@ -99,7 +99,8 @@
                 console.log("Memeber id is " + getCookie(KEY_VIEWER_ID + this.id));
                 let member_id = getCookie(KEY_MEMBER_ID_PRE + this.id);
                 let data = {
-                    member_id: member_id
+                    member_id: member_id,
+                    id: this.id
                 };
                 this.connection.send(JSON.stringify({
                     type: 'api',

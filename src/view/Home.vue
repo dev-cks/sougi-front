@@ -193,17 +193,22 @@
                     let step = getCookie(KEY_REGISTER_STEP + this.funeralInfo.id);
                     if(step == REGISTER_UUID) {
                         this.$router.push({
-                            path: `/complete/${this.funeralInfo.id}`,
-                        });
-                    } else if(step == REGISTER_NEXT) {
-                        this.$router.push({
-                            path: `/notknowother/${this.funeralInfo.id}`,
-                        });
-                    } else if(step == REGISTER_INFO) {
-                        this.$router.push({
                             path: `/bkeeping/${this.funeralInfo.id}`,
                         });
                     }
+                    // if(step == REGISTER_UUID) {
+                    //     this.$router.push({
+                    //         path: `/complete/${this.funeralInfo.id}`,
+                    //     });
+                    // } else if(step == REGISTER_NEXT) {
+                    //     this.$router.push({
+                    //         path: `/notknowother/${this.funeralInfo.id}`,
+                    //     });
+                    // } else if(step == REGISTER_INFO) {
+                    //     this.$router.push({
+                    //         path: `/bkeeping/${this.funeralInfo.id}`,
+                    //     });
+                    // }
                 }
             },
             moveLive() {

@@ -2,7 +2,32 @@
   <div>
     <vNavigation :status="status"></vNavigation>
     <div>
-      <div>
+      <div class="funeral" v-if="detail">
+        <div class="funeral_body">
+          <h5 class="text-center">故人</h5>
+          <h3 class="text-center">{{detail.name}}</h3>
+          <div class="d-flex justify-content-center">
+            <h5 class="mr-5">享年 {{detail.age}}歳</h5>
+            <h5>{{detail.end_date}} 逝去</h5>
+          </div>
+          <pre class="mt-5 mb-5">{{detail.detail}}</pre>
+          <h5 class="mb-3">喪主 : {{detail.manager_name}}</h5>
+          <label class="mb-0 mr-3" style="font-weight: bold">葬儀日程の記述</label>
+          <table class="table table-striped table-bordered" v-show="detail.schedules.length>0">
+            <tr>
+              <td class="v-middle text-center">弔事などの予定</td>
+              <td class="v-middle text-center">日時</td>
+              <td class="v-middle text-center">場所</td>
+            </tr>
+            <tr v-for="item in detail.schedules" :key="item.id">
+              <td class="text-center v-middle">{{item.type}}</td>
+              <td class="text-center v-middle">{{item.start_date}}</td>
+              <td class="text-center v-middle">{{item.name}}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="mt-3">
         <h3>ご登録情報</h3>
 
         <div class="form-group d-flex-1 align-items-center">
@@ -135,7 +160,8 @@
                 flower: 0,
                 condolence: 0,
                 connection: null,
-                loader: null
+                loader: null,
+                detail: null
             };
         },
 
@@ -162,10 +188,14 @@
                 this.connection.onmessage = function(event) {
                     ref.loader.hide();
                     let data = JSON.parse(event.data);
+                    console.log(data);
                     if(data.type == 'get_member') {
                         if(data.status == true) {
                             ref.updateData(data.content);
+                            ref.getDeathDetail();
                         }
+                    } else if(data.type = 'get_info') {
+                        ref.detail = data.detail;
                     } else if(data.type == 'change_profile') {
                         setCookie(KEY_USER_NAME + id, this.name);
                         setCookie(KEY_USER_MOBILE + id, this.mobile);
@@ -176,6 +206,7 @@
                     console.log("Connection open again");
                     if(!ref.email) {
                         ref.getMemberInfo();
+
                     }
                 };
 
@@ -195,6 +226,20 @@
                     container: null,
                     canCancel: true,
                 });
+            },
+            getDeathDetail(){
+                this.createLoader();
+                let id = getCookie(KEY_CURRENT_FUNERAL_ID);
+                let data = {
+                    id: id
+                };
+                console.log("Body is " + this.id);
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'funeral',
+                    path: 'get_info',
+                    body: data
+                }));
             },
             updateData(data) {
                 let user = data.user[0];
