@@ -76,6 +76,15 @@
 
     </div>
 
+    <b-modal ref="password-modal" hide-footer title="Live Password" no-close-on-backdrop no-close-on-esc hide-header-close>
+      <div class="form-group d-flex-1 align-items-center">
+        <label for="mobile1">パスワード</label>
+        <input type="text" class="ml-3-1 form-control" id="mobile1" v-model="password">
+        <p class="invalid" v-if="invalid_password">Invalid Password</p>
+      </div>
+      <b-button class="mt-2"  @click="checkPassword()">Submit</b-button>
+    </b-modal>
+
     <b-sidebar
       id="sidebar"
       title="Message"
@@ -106,7 +115,7 @@
           <div id="_txt_alert"></div>
         </div>
         <div class="card card-body mt-2" id="_txt_msg">
-          <div v-for="(message) in messages"  class="d-flex align-items-center">
+          <div v-for="(message) in messages"  class="d-flex align-items-center" :key="message.time">
             <div class='flex-fill'>
               <font color="message.color">{{message.time + " " + message.user.name }} <br> {{message.message}}</font>
               <br><font color='gray' v-if="message.original">{{"(" + message.language + ") " + message.original}}</font>
@@ -144,7 +153,7 @@
         data() {
             return {
                 public_status: false,
-                show_status: true,
+                show_status: false,
                 id: null,
                 ws0: null,
                 ws1: null,
@@ -184,6 +193,10 @@
                     autoplaySpeed: 3000
                 },
                 connection: null,
+                live_status: null,
+                live_password: null,
+                password: null,
+                invalid_password: false,
             };
         },
 
@@ -194,21 +207,32 @@
             this.connection.onmessage = function(event) {
                 //this.isLoading = false;
                 let data = JSON.parse(event.data);
-                if(data.status == true) {
+                if(data.path == 'get_password_status') {
                     let json = data.content;
-                    ref.show_status = json.show_status;
-                    ref.public_status = json.public_status;
-                    ref.imgList = json.imgList;
-                    for(var i = 0; i < json.imgList.length; i ++) {
-                        ref.imgList[i].img = ADMIN_BASE + '/' + json.imgList[i].img;
+                    ref.live_status = json.live_status;
+                    ref.live_password = json.live_password;
+                    if(ref.live_password == '') {
+                        ref.startLive();
+                    } else {
+                        ref.$refs['password-modal'].show();
                     }
-                    console.log(ref.imgList);
+                } else {
+                    if(data.status == true) {
+                        let json = data.content;
+                        ref.show_status = json.show_status;
+                        ref.public_status = json.public_status;
+                        ref.settings.autoplaySpeed = parseInt(json.slide_speed) * 1000;
+                        ref.imgList = json.imgList;
+                        for(var i = 0; i < json.imgList.length; i ++) {
+                            ref.imgList[i].img = ADMIN_BASE + '/' + json.imgList[i].img;
+                        }
+                        console.log(ref.imgList);
+                    }
                 }
-
 
             };
             this.connection.onopen = function(event) {
-                ref.getStatus();
+                ref.getPasswordStatus();
             };
 
 
@@ -227,10 +251,32 @@
             this.receiveOpus();
             this.receiveMjpeg();
 
-            this.timerInterval = setInterval(() => (ref.getStatus()), 1000 * 60);
+
         },
 
         methods: {
+            checkPassword() {
+                if(this.password == this.live_password) {
+                    this.$refs['password-modal'].hide();
+                    this.startLive();
+                } else {
+                    this.invalid_password = true;
+                }
+            },
+            startLive() {
+                this.getStatus();
+                this.timerInterval = setInterval(() => (this.getStatus()), 1000 * 10);
+            },
+            getPasswordStatus() {
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'channel',
+                    path: 'get_password_status',
+                    body: {
+                        id: this.id
+                    }
+                }));
+            },
             getStatus() {
                 this.connection.send(JSON.stringify({
                     type: 'api',
@@ -343,7 +389,7 @@
                         case 'music':
                             let _background = ref.$refs["background"];
                             if (e.data.src) {
-                                _background.src = LIVE_BASE + "/" + e.data.src;
+                                _background.src = e.data.src;
                                 Audio.mixBackground(_background.src);
                                 //_background.play();
                             } else {
@@ -655,7 +701,7 @@
 }
 
   .half-height {
-    height: 50%;
+    height: calc(50% - 28px);
   }
 
   .canvas-container {
@@ -671,6 +717,10 @@
 
   .text-align-center {
     text-align: center;
+  }
+
+  .invalid {
+    color: red;
   }
 
 </style>

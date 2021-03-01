@@ -33,7 +33,7 @@
 
 
         <div class="card card-body mt-2" id="_txt_msg">
-          <div v-for="(message) in messages"  class="d-flex align-items-center">
+          <div v-for="message in messages"  class="d-flex align-items-center" :key="message.time">
             <div class='flex-fill'>
               <font color="message.color">{{message.time + " " + message.user.name }} <br> {{message.message}}</font>
               <br><font color='gray' v-if="message.original">{{"(" + message.language + ") " + message.original}}</font>
@@ -59,10 +59,9 @@
     <b-modal ref="audio-modal" hide-footer title="Set Audio">
     <div class="form-group d-flex-1 align-items-center">
       <select class="form-control" id="_music" v-model="audio">
-        <option value="">stop</option>
-        <option value="media/At_The_Shore_The_Dark_Contenent.mp3">music1</option>
-        <option value="media/Beach_Party_Islandesque.mp3">music2</option>
-        <option value="media/For_Mimi.mp3">music3</option>
+        <option v-for="option in musicOptions" v-bind:value="option.value" :key="option.value">
+          {{ option.text }}
+        </option>
       </select>
 
     </div>
@@ -134,7 +133,15 @@
     import Vue from 'vue';
     import FastSound from 'fast-sound';
     import {getCookie} from "../../util/support";
-    import {API_BASE, KEY_MANAGE_CAMERA, KEY_MANAGE_ID, KEY_MANAGE_NAME, LIVE_BASE} from "../../config/constants";
+    import {
+        API_BASE,
+        ADMIN_BASE,
+        KEY_MANAGE_CAMERA,
+        KEY_MANAGE_ID,
+        KEY_MANAGE_MUSIC,
+        KEY_MANAGE_NAME, KEY_MANAGE_ORIGINAL_MUSIC,
+        LIVE_BASE
+    } from "../../config/constants";
     import Core from "../../util/core";
     export default Vue.extend({
 
@@ -158,7 +165,15 @@
                 audio: null,
                 anim: null,
                 messages: [],
-                language: null
+                language: null,
+                musicOptions: [
+                    { text: 'Stop', value: '' },
+                    { text: 'At_The_Shore_The_Dark_Contenent', value: LIVE_BASE + '/media/At_The_Shore_The_Dark_Contenent.mp3' },
+                    { text: 'Beach_Party_Islandesque', value: LIVE_BASE + '/media/Beach_Party_Islandesque.mp3' },
+                    { text: 'For_Mimi', value: LIVE_BASE + '/media/For_Mimi.mp3' }
+                ],
+                masterMusic: null,
+                originalMusic: null
             };
         },
 
@@ -167,6 +182,11 @@
             this.cameras = getCookie(KEY_MANAGE_CAMERA);
             this.id = getCookie(KEY_MANAGE_ID);
             this.name = getCookie(KEY_MANAGE_NAME);
+            this.masterMusic = getCookie(KEY_MANAGE_MUSIC);
+            this.originalMusic = getCookie(KEY_MANAGE_ORIGINAL_MUSIC);
+            if(this.masterMusic && this.masterMusic != '') {
+                this.musicOptions.push({ text: this.originalMusic, value: ADMIN_BASE + '/' + this.masterMusic })
+            }
             if(this.cameras.length == 0) {
                 this.isSetNumber = false;
             } else {

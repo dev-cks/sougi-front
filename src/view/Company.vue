@@ -16,18 +16,6 @@
           <td>{{address}}</td>
         </tr>
         <tr>
-          <td class="td0">設立</td>
-          <td>1990年1月1日</td>
-        </tr>
-        <tr>
-          <td class="td0">資本金</td>
-          <td>１万円</td>
-        </tr>
-        <tr>
-          <td class="td0">役員</td>
-          <td>{{contact_name}}</td>
-        </tr>
-        <tr>
           <td class="td0">連絡先</td>
           <td>{{mobile}}</td>
         </tr>
@@ -131,7 +119,7 @@
                 this.name = data.name;
                 this.address = data.address;
                 this.mobile = data.mobile;
-                this.contact_name = data.contact_name + " " + data.contact_surname;
+                //this.contact_name = data.contact_name + " " + data.contact_surname;
             },
             getCompanyInfo() {
                 let data = {

@@ -42,7 +42,7 @@
 <script>
     import Vue from 'vue';
     import {
-        API_BASE
+        API_BASE, KEY_MANAGE_MUSIC, KEY_MANAGE_ORIGINAL_MUSIC
     } from '../../config/constants';
     import {validationMixin} from 'vuelidate';
     import {required, maxLength, minLength} from 'vuelidate/lib/validators';
@@ -108,6 +108,13 @@
                     if(info.camera3 > 0) {
                         camera_arr.push(info.camera3);
                     }
+                    let music = info.music;
+                    let original_music = info.original_music;
+                    if(music && music != '') {
+                        setCookie(KEY_MANAGE_MUSIC, music);
+                        setCookie(KEY_MANAGE_ORIGINAL_MUSIC, original_music);
+                    }
+
                     setCookie(KEY_MANAGE_CAMERA, camera_arr);
                     setCookie(KEY_MANAGE_NAME, info.name);
                     ref.$router.push({

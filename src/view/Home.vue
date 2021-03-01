@@ -1,14 +1,22 @@
 <template>
   <div>
     <vNavigation ref="navigation"></vNavigation>
-    <section id="hero">
-      <div id="hero-txt">
-        <p>Webライブシステムによるお葬式でネットで参列できます。</p>
-      </div>
-    </section>
+<!--    <section id="hero">-->
+<!--      <div id="hero-txt">-->
+<!--        <p>Webライブシステムによるお葬式でネットで参列できます。</p>-->
+<!--      </div>-->
+<!--    </section>-->
 
     <section id="huhou">
+      <div class="mt-2">
+        <p>故　{{funeralInfo.name}}　氏のご案内</p>
 
+        <p class="mt-1"><span class="text-gray">故人ご逝去にあたり、</span>謹んでお悔やみ申し上げます。
+        この度はコロナの影響を鑑み「オンラインでの参列/弔問窓口」をご用意致しました。</p>
+
+        <p class="mt-1"><span class="text-gray">心から哀悼の意を表しますと共に、下記より式日程など詳細をご通知申し上げます。
+        故人とのお別れにご利用くださいませ。</span></p>
+      </div>
 
       <div class="funeral">
 
@@ -19,17 +27,21 @@
       <div>
         <template v-if="status == 0 || status == 1">
           <button  class="gokicho btn" @click="moveRegister()">
-            受付はこちら（ご記帳）
+<!--            受付はこちら（ご記帳）-->
+            オンラインでのご参列/弔問をご希望の方はこちら
+
           </button>
         </template>
         <template v-if="status == 2">
           <button  class="mt-2 login btn" @click="moveNext()">
             ご記帳がお済の方
+
           </button>
         </template>
         <template v-if="status == 3">
           <button  class="mt-2 login btn" @click="moveLive()">
             葬儀を視聴する
+
           </button>
         </template>
 
@@ -113,6 +125,7 @@
             },
             changeData(res) {
                 this.funeralInfo = res.data;
+                console.log(res.data);
                 // this.funeralInfo.create_time = Datetimes.getymd(this.funeralInfo.create_time);
                 // this.funeralInfo.start_time = Datetimes.getmdwhs(this.funeralInfo.start_time);
                 // this.funeralInfo.funeral_start_time = Datetimes.getmdwhs(this.funeralInfo.funeral_start_time);
@@ -247,6 +260,14 @@
   #hero p {
     font-size: 12px;
     color: #313131;
+  }
+
+  .text-gray {
+    color: lightgray;
+  }
+
+  .gokicho {
+    max-width : 450px !important;;
   }
 
   @media(min-width: 768px) {

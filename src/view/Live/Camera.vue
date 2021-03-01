@@ -285,7 +285,7 @@
             grab() {
                 let _canvas = this.$refs["canvas"];
                 let _video = this.$refs["video"];
-                let window_height = window.innerHeight - 32;
+                let window_height = window.innerHeight - 32 - 90;
                 let window_width = window.innerWidth - 32;
                 let scale_x = window_width / this.videoSize.w;
                 let scale_y = window_height / this.videoSize.h;
@@ -293,9 +293,9 @@
                 if(scale_x > scale_y) {
                     scale = scale_y;
                 }
-                if(scale > 1) {
-                    scale = 1;
-                }
+                // if(scale > 1) {
+                //     scale = 1;
+                // }
                 _canvas.width = this.videoSize.w * scale;
                 _canvas.height = this.videoSize.h * scale;
                 const canvasCtx = _canvas.getContext('2d');
