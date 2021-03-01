@@ -21,6 +21,7 @@
             </b-dropdown-item>
           </b-nav-item-dropdown>
           <b-nav-item href="javascript:void(0);" v-b-toggle.sidebar>Message</b-nav-item>
+          <b-nav-item href="javascript:void(0);" @click="rotate()">Rotate</b-nav-item>
         </b-navbar-nav>
 
         <!-- Right aligned nav items -->
@@ -29,52 +30,55 @@
     </b-navbar>
 
 
-    <div class="half-height" ref="video-container">
-      <div class="position-relative canvas-container" v-show="show_status == true">
-        <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
-        <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
-          <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
-        </div>
-        <audio id="_background" ref="background" hidden></audio><br>
-      </div>
-
-      <div class="h-100" v-show="show_status == false">
-        <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
-
-          <div class="text-align-center">
-            <h3>配信中止中です。</h3>
-            <button class="btn-danger">非公開中</button>
+    <div class="live-container" ref="live-container">
+      <div class="half-size" ref="video-container">
+        <div class="position-relative canvas-container" v-show="show_status == true">
+          <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
+          <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
+            <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
           </div>
-
-
+          <audio id="_background" ref="background" hidden></audio><br>
         </div>
+
+        <div class="h-100" v-show="show_status == false">
+          <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
+
+            <div class="text-align-center">
+              <h3>配信中止中です。</h3>
+              <button class="btn-danger">非公開中</button>
+            </div>
+
+
+          </div>
+        </div>
+
       </div>
 
+
+
+
+      <div class="half-size">
+        <VueSlickCarousel v-bind="settings" v-show="public_status == true"  v-if="imgList.length>0">
+          <div v-for="element in imgList" :key="element.id" class="text-center d-flex flex-column align-items-center justify-content-center">
+            <img :src="element.img" alt="画像はありません" class="w-50 max-height">
+            <h6 class="text-center">{{element.title?element.title:''}}</h6>
+          </div>
+        </VueSlickCarousel>
+        <div class="h-100" v-show="public_status == false">
+          <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
+
+            <div class="text-align-center">
+              <h3>アルバムがありません。</h3>
+              <button class="btn-danger">非公開中</button>
+            </div>
+
+
+          </div>
+        </div>
+
+      </div>
     </div>
 
-
-
-
-    <div class="half-height">
-      <VueSlickCarousel v-bind="settings" v-show="public_status == true"  v-if="imgList.length>0">
-        <div v-for="element in imgList" :key="element.id" class="text-center d-flex flex-column align-items-center justify-content-center">
-          <img :src="element.img" alt="画像はありません" class="w-50 max-height">
-          <h6 class="text-center">{{element.title?element.title:''}}</h6>
-        </div>
-      </VueSlickCarousel>
-      <div class="h-100" v-show="public_status == false">
-        <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
-
-          <div class="text-align-center">
-            <h3>アルバムがありません。</h3>
-            <button class="btn-danger">非公開中</button>
-          </div>
-
-
-        </div>
-      </div>
-
-    </div>
 
     <b-modal ref="password-modal" hide-footer title="Live Password" no-close-on-backdrop no-close-on-esc hide-header-close>
       <div class="form-group d-flex-1 align-items-center">
@@ -687,8 +691,16 @@
                 } else {
                     Anim.stop();
                 }
-            }
+            },
 
+            rotate() {
+                let liveContainer = this.$refs["live-container"];
+                if(liveContainer.classList.contains('rotate')){
+                    liveContainer.classList.remove('rotate');
+                } else {
+                    liveContainer.classList.add('rotate');
+                }
+            }
         },
 
 
@@ -700,8 +712,22 @@
   width: 100%;
 }
 
-  .half-height {
-    height: calc(50% - 28px);
+.live-container {
+  height: calc(100% - 56px);
+}
+
+  .half-size {
+    width: 100%;
+    height: 50%;
+  }
+
+  .rotate .half-size {
+    width: 50%;
+    height: 100%;
+  }
+
+  .rotate {
+    display: flex;
   }
 
   .canvas-container {
