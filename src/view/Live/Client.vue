@@ -30,15 +30,19 @@
     </b-navbar>
 
 
-    <div class="live-container" ref="live-container">
-      <div class="half-size" ref="video-container">
-        <div class="position-relative canvas-container" v-show="show_status == true">
-          <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
-          <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
-            <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
+    <div class="live-container d-flex normal" ref="live-container">
+      <vue-draggable-resizable :w="videoContainerWidth" :h="videoContainerHeight" class="half-size"
+                                :handles="[direction]" :draggable="false" :parent="true" @resizing="(left, top, width,height) => onResizing( idx, width,height )">
+        <div class="w-100 h-100 align-center" ref="video-container">
+          <div class="position-relative canvas-container" v-show="show_status == true">
+            <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
+            <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
+              <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
+            </div>
+            <audio id="_background" ref="background" hidden></audio><br>
           </div>
-          <audio id="_background" ref="background" hidden></audio><br>
         </div>
+
 
         <div class="h-100" v-show="show_status == false">
           <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
@@ -52,18 +56,24 @@
           </div>
         </div>
 
-      </div>
+      </vue-draggable-resizable>
 
 
+      <div class="divide-line"></div>
 
-
-      <div class="half-size">
-        <VueSlickCarousel v-bind="settings" v-show="public_status == true"  v-if="imgList.length>0">
-          <div v-for="element in imgList" :key="element.id" class="text-center d-flex flex-column align-items-center justify-content-center">
-            <img :src="element.img" alt="画像はありません" class="w-50 max-height">
-            <h6 class="text-center">{{element.title?element.title:''}}</h6>
+      <div class="flex-1">
+        <div class="align-center w-100 h-100" v-show="public_status == true"  v-if="imgList.length>0">
+          <div class="w-100">
+            <VueSlickCarousel v-bind="settings" >
+              <div v-for="element in imgList" :key="element.id" class="text-center d-flex flex-column align-items-center justify-content-center">
+                <img :src="element.img" alt="画像はありません" class="w-50 max-height">
+                <h6 class="text-center">{{element.title?element.title:''}}</h6>
+              </div>
+            </VueSlickCarousel>
           </div>
-        </VueSlickCarousel>
+
+        </div>
+
         <div class="h-100" v-show="public_status == false">
           <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
 
@@ -201,6 +211,10 @@
                 live_password: null,
                 password: null,
                 invalid_password: false,
+                direction: 'bm',
+                videoContainerWidth: 0,
+                videoContainerHeight: 0,
+                lastImage: null
             };
         },
 
@@ -230,7 +244,6 @@
                         for(var i = 0; i < json.imgList.length; i ++) {
                             ref.imgList[i].img = ADMIN_BASE + '/' + json.imgList[i].img;
                         }
-                        console.log(ref.imgList);
                     }
                 }
 
@@ -257,8 +270,12 @@
 
 
         },
+        mounted() {
+            this.initVideoContainerSize();
+        },
 
         methods: {
+
             checkPassword() {
                 if(this.password == this.live_password) {
                     this.$refs['password-modal'].hide();
@@ -548,25 +565,8 @@
                             //Core.send_log('Receive frames');
                             var img = new Image();
                             img.onload = function() {
-                                let _canvas = ref.$refs["canvas"];
-                                let videos_container = ref.$refs["video-container"];
-                                let window_height = videos_container.clientHeight - 32;
-                                let window_width = videos_container.clientWidth - 32;
-                                console.log(window_width + ":" + window_height);
-                                let scale_x = window_width / img.width;
-                                let scale_y = window_height /img.height;
-                                let scale = scale_x;
-                                if(scale_x > scale_y) {
-                                    scale = scale_y;
-                                }
-                                if(scale > 1) {
-                                    scale = 1;
-                                }
-                                _canvas.width = img.width * scale;
-                                _canvas.height = img.height * scale;
-                                const canvasCtx = _canvas.getContext('2d');
-                                canvasCtx.drawImage(img, 0, 0, img.width * scale, img.height * scale);
-                                if (Anim.hasPlaying()) Anim.draw(canvasCtx);
+                                ref.lastImage = img;
+                                ref.modifyCanvasSize();
                             }
                             img.src = URL.createObjectURL(e.data.blob);
                             break;
@@ -697,9 +697,47 @@
                 let liveContainer = this.$refs["live-container"];
                 if(liveContainer.classList.contains('rotate')){
                     liveContainer.classList.remove('rotate');
+                    liveContainer.classList.add('normal');
+                    this.direction = 'bm';
                 } else {
                     liveContainer.classList.add('rotate');
+                    liveContainer.classList.remove('normal');
+                    this.direction = 'mr';
                 }
+                this.initVideoContainerSize();
+            },
+            onResizing( id, width, height) {
+                console.log("Change size is " + width + ":"+ height);
+                this.videoContainerWidth = width;
+                this.videoContainerHeight = height;
+                this.modifyCanvasSize();
+            },
+            initVideoContainerSize() {
+                this.videoContainerWidth = this.$refs["live-container"].offsetWidth / 2;
+                this.videoContainerHeight = this.$refs["live-container"].offsetHeight / 2;
+                this.modifyCanvasSize();
+            },
+            modifyCanvasSize() {
+                if(this.lastImage) {
+                    var ref = this;
+                    let _canvas = ref.$refs["canvas"];
+                    let window_height = ref.$refs["video-container"].offsetHeight - 32;
+                    let window_width = ref.$refs["video-container"].offsetWidth - 32;
+                    console.log(window_height + ":" + window_width);
+                    let scale_x = window_width / ref.lastImage.width;
+                    let scale_y = window_height /ref.lastImage.height;
+                    let scale = scale_x;
+                    if(scale_x > scale_y) {
+                        scale = scale_y;
+                    }
+
+                    _canvas.width = ref.lastImage.width * scale;
+                    _canvas.height = ref.lastImage.height * scale;
+                    const canvasCtx = _canvas.getContext('2d');
+                    canvasCtx.drawImage(ref.lastImage, 0, 0, ref.lastImage.width * scale, ref.lastImage.height * scale);
+                    if (Anim.hasPlaying()) Anim.draw(canvasCtx);
+                }
+
             }
         },
 
@@ -716,14 +754,38 @@
   height: calc(100% - 56px);
 }
 
-  .half-size {
-    width: 100%;
+.live-container.d-flex {
+  flex-direction: column;
+}
+
+.live-container.rotate.d-flex {
+  flex-direction: row;
+}
+
+  .normal .half-size {
+    width: 100% !important;
     height: 50%;
+    position: relative !important;
+    margin-bottom: 16px;
   }
 
   .rotate .half-size {
     width: 50%;
+    height: 100% !important;
+    position: relative !important;
+    margin-right: 16px;
+  }
+
+  .divide-line {
+    width: 100%;
+    height: 0px;
+    background: white;
+  }
+
+  .rotate .divide-line {
+    width: 2px;
     height: 100%;
+    background: white;
   }
 
   .rotate {
@@ -747,6 +809,17 @@
 
   .invalid {
     color: red;
+  }
+
+  .flex-1 {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .align-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
 </style>

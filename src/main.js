@@ -4,6 +4,12 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import store from './store'
+import VueDraggableResizable from 'vue-draggable-resizable'
+
+// optionally import default styles
+import 'vue-draggable-resizable/dist/VueDraggableResizable.css'
+
+
 Vue.config.productionTip = false
 import components from './components';
 import 'bootstrap/dist/css/bootstrap.css'
@@ -33,6 +39,7 @@ Vue.use(BootstrapVue)
 Vue.use(VueSignaturePad);
 // Optionally install the BootstrapVue icon components plugin
 Vue.use(IconsPlugin);
+Vue.component('vue-draggable-resizable', VueDraggableResizable);
 
 
 
