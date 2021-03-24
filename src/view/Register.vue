@@ -11,23 +11,44 @@
         <pre class="mt-5 mb-5">{{detail.detail}}</pre>
         <h5 class="mb-3">喪主 : {{detail.manager_name}}</h5>
         <label class="mb-0 mr-3" style="font-weight: bold">葬儀日程の記述</label>
-        <table class="table table-striped table-bordered" v-show="detail.schedules.length>0">
-          <tr>
-            <td class="v-middle text-center">弔事などの予定</td>
-            <td class="v-middle text-center">日時</td>
-            <td class="v-middle text-center">場所</td>
-          </tr>
-          <tr v-for="item in detail.schedules" :key="item.id">
-            <td class="text-center v-middle">{{item.type}}</td>
-            <td class="text-center v-middle">{{item.start_date}}</td>
-            <td class="text-center v-middle">{{item.name}}</td>
-          </tr>
-        </table>
+        <div class="w-100 schedule-container" v-show="detail.schedules.length>0">
+          <div class="schedule d-flex">
+            <div class="head">葬儀内容</div>
+            <div class="content">実施スケジュール</div>
+          </div>
+          <div v-for="item in detail.schedules" :key="item.id" >
+            <div class="schedule d-flex">
+              <div class="head">{{item.type}}</div>
+              <div class="content">
+                <div class="text-center">
+                  {{formatDate(item.start_date)}}
+                </div>
+                <div class="text-center border-top">
+                  {{formatTime(item.start_time) + " ~ " + formatTime(item.end_time)}}
+                </div>
+              </div>
+            </div>
+
+            <div class="schedule d-flex">
+              <div class="head">場所</div>
+              <div class="content">
+                <div class="text-center">
+                  {{item.name}}
+                </div>
+                <div class="text-center border-top">
+                  {{item.state + " " + item.city + " " + item.street + " " + item.build_name}}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
       </div>
     </div>
     <div class="form">
       <vNavigation></vNavigation>
-      <div class="form-group">
+      <div class="form-group" v-if="detail && detail.image_status == 1">
         <div id="preview">
           <VueSignaturePad  ref="signaturePad"  width="480px" height="360px" style="border: 1px solid #ced4da"
           />
@@ -143,7 +164,7 @@
 
 
       <div class="form-group">
-        <input type="checkbox" name="privacy" v-model="accept">プライバシーポリシーに同意する
+        <input type="checkbox" name="privacy" v-model="accept_policy">プライバシーポリシーに同意する
         <div>
           <router-link to="/pol" class="pol" target=”_blank”>
             プライバシーポリシーを見る
@@ -152,9 +173,19 @@
 
       </div>
 
+      <div class="form-group">
+        <input type="checkbox" name="privacy" v-model="accept_usage">利用規約に同意する
+        <div>
+          <router-link to="/kiyaku" class="pol" target=”_blank”>
+            利用規約を見る
+          </router-link>
+        </div>
+
+      </div>
+
 
       <div class="d-flex justify-content-center">
-        <button class="mt-2 btn background-main" :disabled="!accept" @click="submit()">記帳デ一タを送信</button>
+        <button class="mt-2 btn background-main" :disabled="!accept_policy || !accept_usage" @click="submit()">記帳デ一タを送信</button>
       </div>
       <vFooter></vFooter>
 
@@ -171,7 +202,13 @@
     import {validationMixin} from 'vuelidate';
     import {required, maxLength, minLength} from 'vuelidate/lib/validators';
     import {
-        API_BASE, KEY_MEMBER_ID_PRE, KEY_USER_MOBILE
+        API_BASE,
+        KEY_ALLOW_COOKIE,
+        KEY_COMPANY_ID,
+        KEY_CURRENT_FUNERAL_ID,
+        KEY_CURRENT_NAME,
+        KEY_MEMBER_ID_PRE,
+        KEY_USER_MOBILE
     } from '../config/constants';
     import {setCookie} from '../util/support';
     import {KEY_USER_NAME, KEY_VIEWER_ID, KEY_UUID, KEY_REGISTER_STEP, REGISTER_UUID} from '../config/constants';
@@ -219,7 +256,8 @@
                 build_name: null,
                 telephone: null,
                 invalidCode: false,
-                accept: false,
+                accept_policy: false,
+                accept_usage: false,
                 url: null,
                 file: null,
                 id: null,
@@ -266,8 +304,12 @@
                     console.log(data);
                     if(data.type == 'send_code') {
 
-                    } else if(data.type = 'get_info') {
+                    } else if(data.type == 'get_info') {
                         ref.detail = data.detail;
+                        setCookie(KEY_ALLOW_COOKIE, 1);
+                        setCookie(KEY_CURRENT_FUNERAL_ID, ref.detail.id);
+                        setCookie(KEY_COMPANY_ID, ref.detail.company_id);
+                        setCookie(KEY_CURRENT_NAME, ref.detail.code);
                     } else if(data.status == true) {
                         ref.updateData(data);
                     } else {
@@ -369,6 +411,8 @@
                 this.url = URL.createObjectURL(this.file);
             },
             updateData(data) {
+                console.log(data);
+                console.log("Update Data");
                 let user_id = data.id;
                 let uuid = data.uuid;
                 setCookie(KEY_USER_NAME + this.id, this.name);
@@ -417,7 +461,8 @@
                 //     return ;
                 // }
                 this.id = this.$route.params.id;
-                const { isEmpty, data } = this.$refs.signaturePad.saveSignature();
+
+
                 //let src = c.toDataURL("image/png");
 
                 let postData = {
@@ -430,8 +475,14 @@
                     build_name: this.build_name,
                     telephone: this.telephone,
                     code: this.code,
-                    file: data
                 };
+
+                if(this.detail.image_status == 1) {
+                    const { isEmpty, data } = this.$refs.signaturePad.saveSignature();
+                    postData.file = data;
+                } else {
+
+                }
 
                 this.connection.send(JSON.stringify({
                     type: 'api',
@@ -451,5 +502,30 @@
    height: auto !important;
    border: none !important;
  }
+ .schedule .head {
+   flex: 1;
+   text-align: center;
+   border-bottom: 1px solid black;
+   border-right: 1px solid black;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+ }
+ .schedule .content {
+   text-align: center;
+   flex: 2;
+   border-bottom: 1px solid black;
+   border-right: 1px solid black;
+ }
+
+ .schedule .content .border-top {
+   border-color: black !important;
+ }
+
+ .schedule-container {
+   border-top: 1px solid black;
+   border-left: 1px solid black;
+ }
+
 
 </style>

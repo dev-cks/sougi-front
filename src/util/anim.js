@@ -124,6 +124,7 @@ function ParseWebP(buffer) {
 }
 
 let animMap = new Map();
+let scale = 1.0;
 let animAlpha = 1;
 let animCtx;
 
@@ -140,7 +141,9 @@ function draw(ctx, now, anim) {
             cur %= anim.frames.length;
         }
         const frame = anim.frames[cur];
-        ctx.drawImage(frame.imageElement, frame.left, frame.top);
+        let height = frame.imageElement.naturalHeight;
+        let width = frame.imageElement.naturalWidth;
+        ctx.drawImage(frame.imageElement, frame.left + width * (1 - scale) / 2, frame.top + height * (1 - scale) / 2, width * scale, height * scale);
     }
 }
 
@@ -217,6 +220,9 @@ export default {
                     });
             }
         });
+    },
+    setScale: function(scaleValue) {
+      scale = scaleValue;
     },
     has: function(url) {
         return animMap.has(url);

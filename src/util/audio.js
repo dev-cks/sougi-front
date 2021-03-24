@@ -447,6 +447,7 @@ export default {
           background = context.createBufferSource();
           background.buffer = audioBuffer;
           background.connect(context.destination);
+          background.loop = true;
           background.start();
         });
     },

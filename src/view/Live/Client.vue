@@ -7,7 +7,7 @@
 
       <b-collapse id="nav-collapse" is-nav>
         <b-navbar-nav>
-          <b-nav-item-dropdown text="Channel" right>
+          <b-nav-item-dropdown text="Channel" right v-if="passPassword && show_status">
             <b-dropdown-item href="javascript:void(0);"  @click="channelStart()">Start</b-dropdown-item>
             <b-dropdown-item href="javascript:void(0);"  @click="channelStop()">Stop</b-dropdown-item>
             <b-dropdown-item href="javascript:void(0);"  @click="channelClose()">Close</b-dropdown-item>
@@ -20,8 +20,18 @@
               </form>
             </b-dropdown-item>
           </b-nav-item-dropdown>
+          <b-nav-item-dropdown href="javascript:void(0);" text="Anim" right>
+            <b-dropdown-item href="javascript:void(0);" >
+              <form class="dropdown-item">
+                Animation Size Change
+                <input type="range" class="form-control-range" min="0" max="100" value="100" v-model="animationSize" @change="animation_size_change()">
+              </form>
+            </b-dropdown-item>
+          </b-nav-item-dropdown>
+
           <b-nav-item href="javascript:void(0);" v-b-toggle.sidebar>Message</b-nav-item>
           <b-nav-item href="javascript:void(0);" @click="rotate()">Rotate</b-nav-item>
+          <b-nav-item href="javascript:void(0);" @click="showPassword()" v-if="!passPassword">Password</b-nav-item>
         </b-navbar-nav>
 
         <!-- Right aligned nav items -->
@@ -31,9 +41,42 @@
 
 
     <div class="live-container d-flex normal" ref="live-container">
-      <vue-draggable-resizable :w="videoContainerWidth" :h="videoContainerHeight" class="half-size"
+      <vue-draggable-resizable :min-width="360" :min-height="100" :w="videoContainerWidth" :h="videoContainerHeight" class="half-size"
                                 :handles="[direction]" :draggable="false" :parent="true" @resizing="(left, top, width,height) => onResizing( idx, width,height )">
-        <div class="w-100 h-100 align-center" ref="video-container">
+        <div class="child-align-center w-100 h-100" v-show="public_status == true && imgList != null && imgList.length>0" ref="image-container" v-on:resize="modifyImageSize()">
+          <div class="w-100 mx-h-100">
+            <VueSlickCarousel v-bind="settings">
+              <div v-for="element in imgList" :key="element.id" class="text-center d-flex flex-column align-items-center justify-content-center" :style="imageStyles">
+                <img :src="element.img" alt="画像はありません" v-bind:class="{
+                  'width-auto': imageBasic == 1,
+                  'height-auto': imageBasic != 1}" >
+                <h6 class="text-center">{{element.title?element.title:''}}</h6>
+              </div>
+            </VueSlickCarousel>
+          </div>
+
+        </div>
+
+        <div class="h-100" v-show="public_status == false">
+          <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
+
+            <div class="text-align-center">
+              <h3>アルバムがありません。</h3>
+              <button class="btn-danger">非公開中</button>
+            </div>
+
+
+          </div>
+        </div>
+
+      </vue-draggable-resizable>
+
+
+      <div class="divide-line"></div>
+
+      <div class="flex-1">
+
+        <div class="w-100 h-100 child-align-center" ref="video-container">
           <div class="position-relative canvas-container" v-show="show_status == true">
             <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
             <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
@@ -56,41 +99,12 @@
           </div>
         </div>
 
-      </vue-draggable-resizable>
-
-
-      <div class="divide-line"></div>
-
-      <div class="flex-1">
-        <div class="align-center w-100 h-100" v-show="public_status == true"  v-if="imgList.length>0">
-          <div class="w-100">
-            <VueSlickCarousel v-bind="settings" >
-              <div v-for="element in imgList" :key="element.id" class="text-center d-flex flex-column align-items-center justify-content-center">
-                <img :src="element.img" alt="画像はありません" class="w-50 max-height">
-                <h6 class="text-center">{{element.title?element.title:''}}</h6>
-              </div>
-            </VueSlickCarousel>
-          </div>
-
-        </div>
-
-        <div class="h-100" v-show="public_status == false">
-          <div class="h-100 bg-dark d-flex justify-content-center align-items-center" >
-
-            <div class="text-align-center">
-              <h3>アルバムがありません。</h3>
-              <button class="btn-danger">非公開中</button>
-            </div>
-
-
-          </div>
-        </div>
 
       </div>
     </div>
 
 
-    <b-modal ref="password-modal" hide-footer title="Live Password" no-close-on-backdrop no-close-on-esc hide-header-close>
+    <b-modal ref="password-modal" hide-footer title="Live Password" >
       <div class="form-group d-flex-1 align-items-center">
         <label for="mobile1">パスワード</label>
         <input type="text" class="ml-3-1 form-control" id="mobile1" v-model="password">
@@ -188,6 +202,7 @@
                 language: null,
                 gender: null,
                 musicVolume: 100,
+                animationSize: 100,
                 messages: [],
                 languageList: [],
                 locale: null,
@@ -207,6 +222,7 @@
                     autoplaySpeed: 3000
                 },
                 connection: null,
+                last_show_status: false,
                 live_status: null,
                 live_password: null,
                 password: null,
@@ -214,45 +230,21 @@
                 direction: 'bm',
                 videoContainerWidth: 0,
                 videoContainerHeight: 0,
-                lastImage: null
+                lastImage: null,
+                passPassword: false,
+                imageBasic: 1,
+                imageWidth: 0,
+                imageHeight: 0,
+                video_index: 0,
+                audio_index: 0
             };
         },
 
         created() {
 
-            this.connection = new WebSocket(API_BASE);
-            let ref = this;
-            this.connection.onmessage = function(event) {
-                //this.isLoading = false;
-                let data = JSON.parse(event.data);
-                if(data.path == 'get_password_status') {
-                    let json = data.content;
-                    ref.live_status = json.live_status;
-                    ref.live_password = json.live_password;
-                    if(ref.live_password == '') {
-                        ref.startLive();
-                    } else {
-                        ref.$refs['password-modal'].show();
-                    }
-                } else {
-                    if(data.status == true) {
-                        let json = data.content;
-                        ref.show_status = json.show_status;
-                        ref.public_status = json.public_status;
-                        ref.settings.autoplaySpeed = parseInt(json.slide_speed) * 1000;
-                        ref.imgList = json.imgList;
-                        for(var i = 0; i < json.imgList.length; i ++) {
-                            ref.imgList[i].img = ADMIN_BASE + '/' + json.imgList[i].img;
-                        }
-                    }
-                }
-
-            };
-            this.connection.onopen = function(event) {
-                ref.getPasswordStatus();
-            };
 
 
+            this.socketConnection();
 
             this.id = this.$route.params.id;
             this.mobile = getCookie(KEY_USER_MOBILE + this.id);
@@ -268,25 +260,86 @@
             this.receiveOpus();
             this.receiveMjpeg();
 
-
         },
         mounted() {
             this.initVideoContainerSize();
         },
 
         methods: {
+            socketConnection() {
+                this.connection = new WebSocket(API_BASE);
+                let ref = this;
+                this.connection.onmessage = function(event) {
+                    //this.isLoading = false;
+                    let data = JSON.parse(event.data);
+                    if(data.path == 'get_password_status') {
+                        let json = data.content;
+                        ref.live_status = json.live_status;
+                        ref.live_password = json.live_password;
+                        if(ref.live_password == '') {
+                            ref.passPassword = true;
+                        } else {
 
+                        }
+                        ref.getStatus();
+                        ref.timerInterval = setInterval(() => (ref.getStatus()), 1000 * 10);
+                        ref.initVideoContainerSize();
+                    } else {
+                        if(data.status == true) {
+                            let json = data.content;
+                            ref.show_status = json.show_status;
+                            ref.public_status = json.public_status;
+                            ref.settings.autoplaySpeed = parseInt(json.slide_speed) * 1000;
+                            ref.imgList = json.imgList;
+                            for(var i = 0; i < json.imgList.length; i ++) {
+                                ref.imgList[i].img = ADMIN_BASE + '/' + json.imgList[i].img;
+                            }
+                            if(ref.last_show_status != ref.show_status) {
+                                if(ref.show_status) {
+                                    ref.channelStart();
+                                } else {
+                                    ref.channelStop();
+                                }
+                                ref.last_show_status = ref.show_status;
+                            }
+
+                        }
+                    }
+
+                };
+                this.connection.onopen = function(event) {
+                    if(ref.timerInterval == null) {
+                        ref.getPasswordStatus();
+                    }
+
+                };
+
+                this.connection.onclose = function(e) {
+                    setTimeout(function() {
+                        ref.socketConnection()
+                    }, 1000);
+                };
+
+                this.connection.onerror = function(err) {
+                    ref.connection.close();
+                };
+            },
+            showPassword() {
+                this.$refs['password-modal'].show();
+            },
             checkPassword() {
                 if(this.password == this.live_password) {
                     this.$refs['password-modal'].hide();
-                    this.startLive();
+                    if(this.show_status == true) {
+                        this.channelStart();
+                    }
+                    this.passPassword = true;
                 } else {
                     this.invalid_password = true;
                 }
             },
             startLive() {
-                this.getStatus();
-                this.timerInterval = setInterval(() => (this.getStatus()), 1000 * 10);
+                this.channelStart();
             },
             getPasswordStatus() {
                 this.connection.send(JSON.stringify({
@@ -321,7 +374,10 @@
                     this.startTime = (new Date()).getTime();
                 }
                 this.playing = true;
-                Video.play();
+                if(this.video_index == this.audio_index) {
+                    Video.play();
+                }
+
                 let result = Audio.play(data, this.scheduled_time);
                 this.scheduled_time = result.time;
                 let duration = result.duration;
@@ -386,9 +442,12 @@
                             ref.showChannelList(e.data.channel);
                             break;
                         case 'start':
+                            console.log("Initial audio is " + e.data.audio);
                             if(e.data.audio) {
+                                console.log("Mix background");
                                 let _background = ref.$refs["background"];
-                                _background.src = LIVE_BASE + "/" + e.data.audio;
+                                _background.src = e.data.audio;
+                                Audio.stopBackground();
                                 Audio.mixBackground(_background.src);
                                 //_background.play();
                             }
@@ -399,8 +458,11 @@
                             //init();
                             let index = parseInt(e.data.video);
                             if(isNaN(index)) {
+                                console.log("Show Video");
                                 ref.showVideo(e.data.video);
                             }
+                            ref.video_index = e.data.video_index;
+                            ref.audio_index = e.data.audio_index;
                             Core.fetch_start_sub(e.data.threadId, e.data.channel);
                             break;
 
@@ -409,8 +471,10 @@
                             break;
                         case 'music':
                             let _background = ref.$refs["background"];
+                            console.log(e.data);
                             if (e.data.src) {
                                 _background.src = e.data.src;
+                                Audio.stopBackground();
                                 Audio.mixBackground(_background.src);
                                 //_background.play();
                             } else {
@@ -428,6 +492,8 @@
                             } else {
                                 ref.stopVideo();
                             }
+                            ref.video_index = e.data.video;
+                            ref.audio_index = e.data.audio;
                             break;
                         default:
                             console.error("ws0 unkown msg:", e.data);
@@ -447,7 +513,10 @@
                             } else if (e.data.result == 'error') {
                                 //Core.show_alert(_alert, 'danger', e.data.error);
                             } else {
-                                ref.channelStart();
+                                if(ref.passPassword == true && ref.show_status == true) {
+                                    ref.channelStart();
+                                }
+
                             }
                             break;
                         case 'open':
@@ -570,6 +639,11 @@
                             }
                             img.src = URL.createObjectURL(e.data.blob);
                             break;
+                        case 'data':
+                            if(ref.video_index != ref.audio_index) {
+                                Video.play();
+                            }
+                            break;
 
                     }
                 }
@@ -662,6 +736,9 @@
                 _background.volume = this.musicVolume / 100;
                 _default.volume = this.musicVolume / 100;
             },
+            animation_size_change() {
+              Anim.setScale(this.animationSize / 100);
+            },
             music_stop() {
                 let _audio = this.$refs["audio"];
                 _audio.pause();
@@ -711,11 +788,30 @@
                 this.videoContainerWidth = width;
                 this.videoContainerHeight = height;
                 this.modifyCanvasSize();
+                let containerWidth = this.$refs["image-container"].offsetWidth;
+                let containerHeight = this.$refs["image-container"].offsetHeight;
+                this.modifyImageSize(containerWidth, containerHeight);
             },
             initVideoContainerSize() {
                 this.videoContainerWidth = this.$refs["live-container"].offsetWidth / 2;
                 this.videoContainerHeight = this.$refs["live-container"].offsetHeight / 2;
                 this.modifyCanvasSize();
+                if(this.direction == 'mr') {
+                    this.modifyImageSize(this.videoContainerWidth, this.videoContainerHeight * 2);
+                } else {
+                    this.modifyImageSize(this.videoContainerWidth * 2, this.videoContainerHeight);
+                }
+            },
+            modifyImageSize(containerWidth, containerHeight) {
+
+                console.log("Change size is " + containerWidth + ":"+ containerHeight);
+                if(containerHeight * 4 > containerWidth * 3) {
+                    this.imageBasic = 1;
+                    this.imageHeight = containerWidth * 3 / 4 - 24;
+                }  else {
+                    this.imageBasic = 0;
+                    this.imageHeight = containerHeight - 24;
+                }
             },
             modifyCanvasSize() {
                 if(this.lastImage) {
@@ -723,7 +819,7 @@
                     let _canvas = ref.$refs["canvas"];
                     let window_height = ref.$refs["video-container"].offsetHeight - 32;
                     let window_width = ref.$refs["video-container"].offsetWidth - 32;
-                    console.log(window_height + ":" + window_width);
+
                     let scale_x = window_width / ref.lastImage.width;
                     let scale_y = window_height /ref.lastImage.height;
                     let scale = scale_x;
@@ -740,6 +836,14 @@
 
             }
         },
+
+        computed: {
+            imageStyles () {
+                return {
+                    height: `${this.imageHeight}px`,
+                }
+            }
+        }
 
 
     });
@@ -816,10 +920,29 @@
     overflow: hidden;
   }
 
-  .align-center {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .mx-h-100 {
+    max-height: 100%;
   }
+
+  img.width-auto{
+    width: calc(100% - 32px);
+    height: auto;
+  }
+  img.height-auto{
+    width: auto;
+    height: calc(100% - 24px);;
+  }
+
+
+
+  .slick-slider {
+    height: 100%;
+  }
+
+  .slick-list {
+    height: 100%;
+  }
+
+
 
 </style>

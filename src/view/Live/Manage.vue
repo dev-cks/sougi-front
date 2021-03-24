@@ -14,7 +14,7 @@
             <b-dropdown-item href="javascript:void(0);" :hidden="!isOpen" @click="channelStop()">Stop</b-dropdown-item>
             <b-dropdown-item href="javascript:void(0);" :hidden="!isOpen" @click="channelClose()">Close</b-dropdown-item>
           </b-nav-item-dropdown>
-          <b-nav-item href="javascript:void(0);" :hidden="!isOpen" @click="showAudioModal()">Audio</b-nav-item>
+          <b-nav-item href="javascript:void(0);" :hidden="!isOpen" @click="getAudio()">Audio</b-nav-item>
           <b-nav-item href="javascript:void(0);" :hidden="!isOpen" @click="showAnimModal()">Anim</b-nav-item>
           <b-nav-item href="javascript:void(0);" :hidden="!isOpen" v-b-toggle.sidebar>Message</b-nav-item>
         </b-navbar-nav>
@@ -68,7 +68,7 @@
     <b-button class="mt-2"  @click="updateAudio()">Submit</b-button>
   </b-modal>
 
-    <b-modal ref="anim-modal" hide-footer title="Set Audio">
+    <b-modal ref="anim-modal" hide-footer title="Set Anim">
       <div class="form-group d-flex-1 align-items-center">
         <select class="form-control" id="_anim" v-model="anim">
           <option value="-1" selected>stop</option>
@@ -166,12 +166,13 @@
                 anim: null,
                 messages: [],
                 language: null,
-                musicOptions: [
+                originalMusicOptions: [
                     { text: 'Stop', value: '' },
                     { text: 'At_The_Shore_The_Dark_Contenent', value: LIVE_BASE + '/media/At_The_Shore_The_Dark_Contenent.mp3' },
                     { text: 'Beach_Party_Islandesque', value: LIVE_BASE + '/media/Beach_Party_Islandesque.mp3' },
                     { text: 'For_Mimi', value: LIVE_BASE + '/media/For_Mimi.mp3' }
                 ],
+                musicOptions: [],
                 masterMusic: null,
                 originalMusic: null
             };
@@ -182,11 +183,7 @@
             this.cameras = getCookie(KEY_MANAGE_CAMERA);
             this.id = getCookie(KEY_MANAGE_ID);
             this.name = getCookie(KEY_MANAGE_NAME);
-            this.masterMusic = getCookie(KEY_MANAGE_MUSIC);
-            this.originalMusic = getCookie(KEY_MANAGE_ORIGINAL_MUSIC);
-            if(this.masterMusic && this.masterMusic != '') {
-                this.musicOptions.push({ text: this.originalMusic, value: ADMIN_BASE + '/' + this.masterMusic })
-            }
+
             if(this.cameras.length == 0) {
                 this.isSetNumber = false;
             } else {
@@ -198,29 +195,68 @@
             Core.connect(LIVE_BASE);
             this.receiveMain();
             this.receiveClient();
+            this.socketConnection();
 
-            this.connection = new WebSocket(API_BASE);
-            let ref = this;
-            this.connection.onmessage = function(event) {
-                ref.loader.hide();
-                //this.isLoading = false;
-                let data = JSON.parse(event.data);
-                if(data.status == true) {
-                    ref.cameras = data.content;
-                    ref.isSetNumber = true;
-                    ref.channelOpen();
-                }
-
-            };
         },
 
         methods: {
+            socketConnection() {
+                this.connection = new WebSocket(API_BASE);
+                let ref = this;
+                this.connection.onmessage = function(event) {
+                    ref.loader.hide();
+                    //this.isLoading = false;
+                    let data = JSON.parse(event.data);
+                    console.log("Audio Data is " + JSON.stringify(data));
+                    if(data.status == true) {
+                        if(data.type == 'get_manager') {
+                            let json = data.data;
+
+                            ref.musicOptions = [];
+                            for(var i = 0; i < ref.originalMusicOptions.length; i ++) {
+                                ref.musicOptions.push(ref.originalMusicOptions[i]);
+                            }
+                            if(json.music && json.music != '') {
+                                ref.musicOptions.push({ text: json.original_music, value: ADMIN_BASE + '/' + json.music })
+                            }
+                            ref.showAudioModal();
+                        } else {
+                            ref.cameras = data.content;
+                            ref.isSetNumber = true;
+                            ref.channelOpen();
+                        }
+
+                    }
+
+                };
+
+                this.connection.onclose = function(e) {
+                    setTimeout(function() {
+                        ref.socketConnection()
+                    }, 1000);
+                };
+
+                this.connection.onerror = function(err) {
+                    ref.connection.close();
+                };
+            },
             createLoader() {
                 this.loader = this.$loading.show({
                     // Optional parameters
                     container: null,
                     canCancel: true,
                 });
+            },
+            getAudio() {
+                this.connection.send(JSON.stringify({
+                    type: 'api',
+                    method: 'funeral',
+                    path: 'get_manager',
+                    body: {
+                        id: this.id
+                    }
+                }));
+                this.createLoader();
             },
             showAudioModal() {
                 this.$refs['audio-modal'].show();

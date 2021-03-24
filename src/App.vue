@@ -76,5 +76,22 @@ ul {
   .full-page header {
     position: relative !important;
   }
+
+  .child-align-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+.radio-image{
+  position:relative;
+  overflow:hidden;
+  padding-bottom:75% !important;
+}
+.radio-image > img{
+  height: 100%;
+  object-fit: cover;
+  position:absolute;
+}
 </style>
 

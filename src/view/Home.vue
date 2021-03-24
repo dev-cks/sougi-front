@@ -20,8 +20,8 @@
 
       <div class="funeral">
 
-        <div class="funeral_body mt-2" v-html="funeralInfo.note">
-        </div>
+<!--        <div class="funeral_body mt-2" v-html="funeralInfo.note">-->
+<!--        </div>-->
       </div>
 
       <div>

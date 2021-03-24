@@ -13,18 +13,40 @@
           <pre class="mt-5 mb-5">{{detail.detail}}</pre>
           <h5 class="mb-3">喪主 : {{detail.manager_name}}</h5>
           <label class="mb-0 mr-3" style="font-weight: bold">葬儀日程の記述</label>
-          <table class="table table-striped table-bordered" v-show="detail.schedules.length>0">
-            <tr>
-              <td class="v-middle text-center">弔事などの予定</td>
-              <td class="v-middle text-center">日時</td>
-              <td class="v-middle text-center">場所</td>
-            </tr>
-            <tr v-for="item in detail.schedules" :key="item.id">
-              <td class="text-center v-middle">{{item.type}}</td>
-              <td class="text-center v-middle">{{item.start_date}}</td>
-              <td class="text-center v-middle">{{item.name}}</td>
-            </tr>
-          </table>
+
+          <div class="w-100 schedule-container" v-show="detail.schedules.length>0">
+            <div class="schedule d-flex">
+              <div class="head">葬儀内容</div>
+              <div class="content">実施スケジュール</div>
+            </div>
+            <div v-for="item in detail.schedules" :key="item.id" >
+              <div class="schedule d-flex">
+                <div class="head">{{item.type}}</div>
+                <div class="content">
+                  <div class="text-center">
+                    {{formatDate(item.start_date)}}
+                  </div>
+                  <div class="text-center border-top">
+                    {{formatTime(item.start_time) + " ~ " + formatTime(item.end_time)}}
+                  </div>
+                </div>
+              </div>
+
+              <div class="schedule d-flex">
+                <div class="head">場所</div>
+                <div class="content">
+                  <div class="text-center">
+                    {{item.name}}
+                  </div>
+                  <div class="text-center border-top">
+                    {{item.state + " " + item.city + " " + item.street + " " + item.build_name}}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
         </div>
       </div>
       <div class="mt-3">
@@ -94,8 +116,8 @@
       <div class="mt-3">
         <h3>ご香典・お花・ご弔電</h3>
         <p>ご香典：<span class="mypage-koden">{{money}}</span>円をお預かりしております。</p>
-        <p>お　花：<span class="mypage-choka">{{flower}}</span>円をご注文して頂いております。</p>
-        <p>ご弔電：<span class="mypage-choden">{{condolence}}</span>円をご注文して頂いております。</p>
+
+        <p>その他：<span class="mypage-koden">{{total_product}}</span>円をご注文して頂いております。</p>
 
         <div class="d-flex justify-content-center">
           <button class="mt-2 btn incensebtn" @click="moveIncense()">ご香典・お花をお申込む</button>
@@ -161,7 +183,9 @@
                 condolence: 0,
                 connection: null,
                 loader: null,
-                detail: null
+                detail: null,
+                products: [],
+                total_product: 0
             };
         },
 
@@ -241,7 +265,24 @@
                     body: data
                 }));
             },
+            formatDate(date){
+                let year = date.substring(0,4);
+                let month = date.substring(5,7);
+                if(month<10)
+                    month = parseInt(month);
+                let day = date.substring(8,10);
+                if(day<10)
+                    day = parseInt(day);
+                let convert_date = new Date(year, month - 1, day);
+                let weeknumber = convert_date.getDay();
+                let weekdays = ["日曜日","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日"];
+                return year+"年"+month+"月"+day+"日"+" "+weekdays[weeknumber];
+            },
+            formatTime(time){
+                return time.substring(0,2)+"時"+time.substring(3,5)+"分";
+            },
             updateData(data) {
+                console.log(data);
                 let user = data.user[0];
                 let full_name = user.name;
                 this.name = full_name;
@@ -251,17 +292,17 @@
                 this.company_name = user.company_name;
                 this.build_name = user.build_name;
                 this.telephone = user.telephone;
-                this.money = data.money.sum;
-                this.condolence = data.condolence.sum;
-                this.flower = data.flower.sum;
+                if(data.money.length > 0) {
+                    this.money = data.money[0].sum;
+                }
+
+                this.products = data.products;
                 if(this.money == null) {
                     this.money= 0;
                 }
-                if(this.condolence == null) {
-                    this.condolence= 0;
-                }
-                if(this.flower == null) {
-                    this.flower= 0;
+                this.total_product = 0;
+                for(var i = 0; i < this.products.length; i ++) {
+                    this.total_product = this.total_product + parseInt(this.products[i].sum);
                 }
             },
             getMemberInfo() {
@@ -325,5 +366,29 @@
 </script>
 
 <style>
+  .schedule .head {
+    flex: 1;
+    text-align: center;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .schedule .content {
+    text-align: center;
+    flex: 2;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+  }
+
+  .schedule .content .border-top {
+    border-color: black !important;
+  }
+
+  .schedule-container {
+    border-top: 1px solid black;
+    border-left: 1px solid black;
+  }
 
 </style>
