@@ -13,6 +13,8 @@
             <b-dropdown-item href="javascript:void(0);"  @click="channelClose()">Close</b-dropdown-item>
           </b-nav-item-dropdown>
           <b-nav-item href="javascript:void(0);" class="d-none">Audio</b-nav-item>
+          <b-nav-item href="javascript:void(0);" @click="switchCamera()">Switch Camera</b-nav-item>
+
         </b-navbar-nav>
 
         <!-- Right aligned nav items -->
@@ -23,8 +25,6 @@
     <div class="canvas-container">
       <canvas id="_canvas" ref="canvas"></canvas><br>
     </div>
-
-
     <video id="_video" ref="video" muted hidden></video><br>
     <audio id="_audio" ref="audio" hidden></audio>
   </div>
@@ -64,7 +64,10 @@
                 audioIndex: 0,
                 videoIndex: 0,
                 videoPaused: true,
-                grabIntervalId: null
+                grabIntervalId: null,
+                currentStream: null,
+                currentType: 'user',
+                currentRotate: 0,
             };
         },
 
@@ -116,9 +119,13 @@
                     return;
                 }
                 console.info("channel_start");
-                let ref = this;
+
                 //Core.show_alert(_alert, 'info', 'channel start');
                 //
+                this.setCamera(this.currentType);
+            },
+            setCamera(type) {
+                let ref = this;
                 navigator.mediaDevices.getUserMedia({
                     audio: {
                         sampleRate: this.SAMPLE_RATE,
@@ -130,7 +137,7 @@
                     video: {
                         width: (window.innerWidth > window.innerHeight ? this.videoSize.w : this.videoSize.h),
                         height: (window.innerWidth > window.innerHeight ? this.videoSize.h : this.videoSize.w),
-                        facingMode: 'user'
+                        facingMode: type
                     }
                 })
                     .then(function(stream) {
@@ -145,6 +152,8 @@
                         ref.videoPaused = false;
                         let _video = ref.$refs["video"];
                         _video.srcObject = stream;
+                        ref.currentStream = stream;
+
                         _video.play();
                         ref.aGainNode.connect(Audio.getContext().destination);
                         //
@@ -156,6 +165,22 @@
                     .catch(function(err) {
                         console.error("getUserMedia", err);
                     });
+            },
+            stopMediaTracks(stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            },
+            switchCamera() {
+                if(this.currentStream) {
+                    this.stopMediaTracks(this.currentStream);
+                }
+                if(this.currentType == 'user'){
+                    this.currentType = 'environment';
+                } else {
+                    this.currentType = 'user';
+                }
+                this.setCamera(this.currentType);
             },
             showChannelList(list) {
                 console.log(list);
@@ -299,6 +324,7 @@
                 _canvas.width = this.videoSize.w * scale;
                 _canvas.height = this.videoSize.h * scale;
                 const canvasCtx = _canvas.getContext('2d');
+
                 canvasCtx.drawImage(_video, 0, 0, this.videoSize.w * scale, this.videoSize.h * scale);
                 //
                 //todo: another image processes

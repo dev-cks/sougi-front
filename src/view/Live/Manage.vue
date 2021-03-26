@@ -16,6 +16,7 @@
           </b-nav-item-dropdown>
           <b-nav-item href="javascript:void(0);" :hidden="!isOpen" @click="getAudio()">Audio</b-nav-item>
           <b-nav-item href="javascript:void(0);" :hidden="!isOpen" @click="showAnimModal()">Anim</b-nav-item>
+          <b-nav-item href="javascript:void(0);" @click="rotate()">Rotate</b-nav-item>
           <b-nav-item href="javascript:void(0);" :hidden="!isOpen" v-b-toggle.sidebar>Message</b-nav-item>
         </b-navbar-nav>
 
@@ -23,6 +24,16 @@
 
       </b-collapse>
     </b-navbar>
+    <div class="w-100 live-container " ref="video-container">
+      <div class="position-relative w-100 h-100 canvas-container child-align-center" >
+        <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
+        <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
+          <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
+        </div>
+        <audio id="_background" ref="background" hidden></audio><br>
+      </div>
+    </div>
+
     <b-sidebar
       id="sidebar"
       title="Message"
@@ -131,6 +142,9 @@
 
 <script>
     import Vue from 'vue';
+    import Anim from '../../util/anim';
+    import Audio from '../../util/audio';
+    import Video from '../../util/video';
     import FastSound from 'fast-sound';
     import {getCookie} from "../../util/support";
     import {
@@ -158,6 +172,13 @@
                 mobile3: null,
                 ws0: null,
                 ws1: null,
+                SAMPLE_RATE: 48000,
+                limit: 8,
+                STEREO: true,
+                mjpeg: null,
+                opus: null,
+                playing: false,
+                audioBuffer: [],
                 connection: null,
                 loader: null,
                 audioIndex: 1,
@@ -174,7 +195,9 @@
                 ],
                 musicOptions: [],
                 masterMusic: null,
-                originalMusic: null
+                originalMusic: null,
+                showDefault: false,
+                currentRotate: 0
             };
         },
 
@@ -191,12 +214,15 @@
             }
             this.ws0 = Core.worker();
             this.ws1 = Core.worker();
+            this.mjpeg = Video.worker();
+            this.opus = Audio.decoder(this.SAMPLE_RATE, this.STEREO);
             Core.init(this.ws0, this.ws1);
             Core.connect(LIVE_BASE);
             this.receiveMain();
             this.receiveClient();
             this.socketConnection();
-
+            this.receiveOpus();
+            this.receiveMjpeg();
         },
 
         methods: {
@@ -268,8 +294,13 @@
                 this.$refs['audio-modal'].hide();
                 if (this.audio && this.audio.length > 0) {
                     Core.music(this.ws1.threadId, this.audio); // play
+                    let _background = this.$refs["background"];
+                    _background.src = this.audio;
+                    Audio.stopBackground();
+                    Audio.mixBackground(_background.src);
                 } else {
                     Core.music(this.ws1.threadId); // stop
+                    Audio.stopBackground();
                 }
             },
             updateAnim() {
@@ -353,6 +384,11 @@
             channelModify() {
                 this.$refs['setting-modal'].hide();
                 Core.channel_setting(this.videoIndex, this.audioIndex, this.ws1.threadId);
+                if(isNaN(this.videoIndex)) {
+                    this.showVideo(this.videoIndex);
+                } else {
+                    this.stopVideo();
+                }
             },
             receiveMain() {
                 let ref = this;
@@ -384,11 +420,21 @@
                             this.ws1.threadId = e.data.info.threadId;
                             //this.isSetNumber = true;
                             Core.channel_connect(e.data.info);
+                            Core.fetch_start(this.ws1.threadId);
                             //Core.show_alert(_alert, 'info', 'connected');
                             break;
                         case 'created':
                             let port = e.data.info.port;
-
+                            break;
+                        case 'start':
+                            Core.fetch_start_sub(e.data.threadId, e.data.channel);
+                            break;
+                        case 'fetch':
+                            Core.fetch_next(e.data.channel);
+                            break;
+                        case 'anim':
+                            this.anim_play(e.data.anim);
+                            break;
                         case 'closed':
                             console.info('closed', e.data.info.threadId);
                             //Core.show_alert(_alert, 'info', 'closed');
@@ -411,6 +457,29 @@
                             console.log('ws1 opened');
                             this.isOpen = true;
                             // do nothing
+                            break;
+                        case 'video':
+                            //console.log("Recevie video data " + e.data.payload.length);
+                            Video.decode(e.data.payload);
+                            break;
+                        case 'audio':
+                            //console.log("Recevie audio data " + e.data.payload.byteLength);
+                            Audio.decode(e.data.payload);
+                            break;
+                        case 'fetch':
+                            switch (e.data.method) {
+                                case 'start':
+                                    this.ws1.playing = true;
+                                    //Core.show_alert(_alert, 'info', 'fetch start');
+                                    break;
+                                case 'stop':
+                                    delete this.ws1.playing;
+                                    //Core.show_alert(_alert, 'info', 'fetch stop');
+                                    break;
+                                case 'none':
+                                    //Core.show_alert(_alert, 'info', 'no data');
+                                    break;
+                            }
                             break;
                         case 'text':
                             e.data.sender = 1;
@@ -464,7 +533,162 @@
                             console.error("unkown msg:", e.data);
                     }
                 }
-            }
+            },
+            receiveOpus() {
+                let ref = this;
+                this.opus.onmessage = e => {
+                    switch (e.data.type) {
+                        case 'ready':
+                            break;
+                        case 'data':
+                            if(ref.playing == false) {
+                                ref.play(e.data.payload);
+                            } else {
+                                if(ref.audioBuffer.length >= ref.limit) {
+                                    ref.audioBuffer.shift();
+                                }
+                                ref.audioBuffer.push(e.data.payload);
+                            }
+                            break;
+                        case 'error':
+                            console.error('audio decode error', e.data.error);
+                        default:
+                    }
+                }
+            },
+            receiveMjpeg() {
+                let ref = this;
+                this.mjpeg.onmessage = e => {
+                    switch (e.data.type) {
+                        case 'frame':
+                            //Core.send_log('Receive frames');
+                            var img = new Image();
+                            img.onload = function() {
+                                ref.lastImage = img;
+                                ref.modifyCanvasSize();
+                            }
+                            img.src = URL.createObjectURL(e.data.blob);
+                            break;
+                        case 'data':
+                            if(ref.videoIndex != ref.audioIndex) {
+                                Video.play();
+                            }
+                            break;
+
+                    }
+                }
+            },
+            onEnded() {
+                this.playing = false;
+                if(this.audioBuffer.length > 0) {
+                    let data = this.audioBuffer[0];
+                    this.audioBuffer.shift();
+                    this.play(data);
+                }
+            },
+            play(data) {
+                if(this.startTime == null) {
+                    this.startTime = (new Date()).getTime();
+                }
+                this.playing = true;
+                if(this.video_index == this.audio_index) {
+                    Video.play();
+                }
+
+                let result = Audio.play(data, this.scheduled_time);
+                this.scheduled_time = result.time;
+                let duration = result.duration;
+                this.sumDuration = this.sumDuration + duration;
+                Core.send_log("result is " + JSON.stringify(result));
+                setTimeout(this.onEnded, duration * 1000);
+                let time = (new Date()).getTime();
+            },
+            setBlock(json) {
+                if(json.mobile == this.mobile) {
+                    this.isBlock = true;
+                }
+            },
+            showVideo(src) {
+                console.log(src);
+                this.showDefault = true;
+
+                let _default = this.$refs["default"];
+                _default.src = LIVE_BASE + "/" + src;
+                _default.play();
+            },
+            stopVideo() {
+                let _default = this.$refs["default"];
+                _default.pause();
+                this.showDefault = false;
+            },
+            music_stop() {
+                let _audio = this.$refs["audio"];
+                _audio.pause();
+            },
+            modifyCanvasSize() {
+                if(this.lastImage) {
+                    var ref = this;
+                    let _canvas = ref.$refs["canvas"];
+                    let window_height = ref.$refs["video-container"].offsetHeight - 32;
+                    let window_width = ref.$refs["video-container"].offsetWidth - 32;
+
+                    let scale_x = window_width / ref.lastImage.width;
+                    let scale_y = window_height /ref.lastImage.height;
+                    let scale = scale_x;
+                    if(scale_x > scale_y) {
+                        scale = scale_y;
+                    }
+
+                    _canvas.width = ref.lastImage.width * scale;
+                    _canvas.height = ref.lastImage.height * scale;
+                    const canvasCtx = _canvas.getContext('2d');
+                    var TO_RADIANS = Math.PI/180;
+                    let angleInRadians = ref.currentRotate * TO_RADIANS;
+                    var x = _canvas.width / 2;
+                    var y = _canvas.height / 2;
+                    var width = _canvas.width;
+                    var height = _canvas.height;
+                    canvasCtx.translate(x, y);
+                    canvasCtx.rotate(angleInRadians);
+                    canvasCtx.drawImage(ref.lastImage, -width / 2, -height / 2, width, height);
+                    canvasCtx.rotate(-angleInRadians);
+                    canvasCtx.translate(-x, -y);
+                    if (Anim.hasPlaying()) Anim.draw(canvasCtx);
+                    //canvasCtx.drawImage(ref.lastImage, 0, 0, ref.lastImage.width * scale, ref.lastImage.height * scale);
+                }
+
+            },
+            rotate() {
+                this.currentRotate = this.currentRotate + 90;
+                if(this.currentRotate == 360) {
+                    this.currentRotate = 0;
+                }
+            },
+            anim_play(anim) {
+                if (anim.src) {
+                    const loop = anim.loop;
+                    const speed = anim.speed;
+                    const src = LIVE_BASE + "/" + anim.src;
+                    //console.log(_anim.selectedIndex, loop, speed);
+                    Anim.play(src, loop, speed)
+                        .then(() => {
+                            // for debug
+                            // if (!this.showDefault) {
+                            //     let _canvas = this.$refs["canvas"];
+                            //     _canvas.width = this.videoSize.w;
+                            //     _canvas.height = this.videoSize.h;
+                            //     const canvasCtx = _canvas.getContext('2d');
+                            //     Anim.start(canvasCtx);
+                            //     //Anim.opacity(0.3);
+                            // }
+                        })
+                        .catch((e) => {
+                            console.error(e);
+                        });
+                } else {
+                    Anim.stop();
+                }
+            },
         },
 
 
@@ -484,4 +708,14 @@
     overflow-x: hidden;
     transition: 0.3s;
   }
+
+  #_default_video {
+    width: 100%;
+    max-height: 100%;
+  }
+
+  .live-container {
+    height: calc(100% - 56px);
+  }
+
 </style>

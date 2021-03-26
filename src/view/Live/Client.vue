@@ -23,13 +23,14 @@
           <b-nav-item-dropdown href="javascript:void(0);" text="Anim" right>
             <b-dropdown-item href="javascript:void(0);" >
               <form class="dropdown-item">
-                Animation Size Change
+                Animation
                 <input type="range" class="form-control-range" min="0" max="100" value="100" v-model="animationSize" @change="animation_size_change()">
               </form>
             </b-dropdown-item>
           </b-nav-item-dropdown>
 
           <b-nav-item href="javascript:void(0);" v-b-toggle.sidebar>Message</b-nav-item>
+          <b-nav-item href="javascript:void(0);" @click="directionChange()">Direction</b-nav-item>
           <b-nav-item href="javascript:void(0);" @click="rotate()">Rotate</b-nav-item>
           <b-nav-item href="javascript:void(0);" @click="showPassword()" v-if="!passPassword">Password</b-nav-item>
         </b-navbar-nav>
@@ -77,9 +78,9 @@
       <div class="flex-1">
 
         <div class="w-100 h-100 child-align-center" ref="video-container">
-          <div class="position-relative canvas-container" v-show="show_status == true">
+          <div class="position-relative canvas-container w-100 h-100" v-show="show_status == true">
             <canvas id="_canvas" ref="canvas" :hidden="showDefault"></canvas><br>
-            <div class="position-absolute align-items-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
+            <div class="position-absolute child-align-center" style="left: 0; top: 0; right: 0; bottom: 0" id="_default_video_parent" :hidden="!showDefault">
               <video id="_default_video" ref="default" type="video/mp4" autoplay loop playsinline></video><br>
             </div>
             <audio id="_background" ref="background" hidden></audio><br>
@@ -236,7 +237,8 @@
                 imageWidth: 0,
                 imageHeight: 0,
                 video_index: 0,
-                audio_index: 0
+                audio_index: 0,
+                currentRotate: 0
             };
         },
 
@@ -323,6 +325,12 @@
                 this.connection.onerror = function(err) {
                     ref.connection.close();
                 };
+            },
+            rotate() {
+                this.currentRotate = this.currentRotate + 90;
+                if(this.currentRotate == 360) {
+                    this.currentRotate = 0;
+                }
             },
             showPassword() {
                 this.$refs['password-modal'].show();
@@ -770,7 +778,7 @@
                 }
             },
 
-            rotate() {
+            directionChange() {
                 let liveContainer = this.$refs["live-container"];
                 if(liveContainer.classList.contains('rotate')){
                     liveContainer.classList.remove('rotate');
@@ -830,7 +838,18 @@
                     _canvas.width = ref.lastImage.width * scale;
                     _canvas.height = ref.lastImage.height * scale;
                     const canvasCtx = _canvas.getContext('2d');
-                    canvasCtx.drawImage(ref.lastImage, 0, 0, ref.lastImage.width * scale, ref.lastImage.height * scale);
+                    var TO_RADIANS = Math.PI/180;
+                    let angleInRadians = ref.currentRotate * TO_RADIANS;
+                    var x = _canvas.width / 2;
+                    var y = _canvas.height / 2;
+                    var width = _canvas.width;
+                    var height = _canvas.height;
+                    canvasCtx.translate(x, y);
+                    canvasCtx.rotate(angleInRadians);
+                    canvasCtx.drawImage(ref.lastImage, -width / 2, -height / 2, width, height);
+                    canvasCtx.rotate(-angleInRadians);
+                    canvasCtx.translate(-x, -y);
+                    //canvasCtx.drawImage(ref.lastImage, 0, 0, ref.lastImage.width * scale, ref.lastImage.height * scale);
                     if (Anim.hasPlaying()) Anim.draw(canvasCtx);
                 }
 
@@ -852,6 +871,7 @@
 <style scoped>
 #_default_video {
   width: 100%;
+  max-height: 100%;
 }
 
 .live-container {
