@@ -1,12 +1,8 @@
 <template>
   <div class="form">
-
-
-
     <div class="form-group d-flex-1 align-items-center">
       <label for="type">ユーザー種類</label>
       <select class="form-control" id="type" v-model="type">
-        <option value="1">喪主</option>
         <option value="2">撮影が</option>
       </select>
 
@@ -21,7 +17,7 @@
     </div>
 
     <div class="form-group d-flex-1 align-items-center">
-      <label for="mobile">訃報ID</label>
+      <label for="code">訃報ID</label>
       <input type="text" class="ml-3-1 form-control" id="code" v-model="code">
       <div class="invalid-feedback d-block">
         <span v-if="submitted && !$v.code.required">Please insert funeral id</span>
@@ -68,16 +64,18 @@
         data() {
             return {
                 submitted: false,
-                type: 1,
+                type: 2,
                 mobile: null,
                 code: null,
                 connection: null,
-                loader: null
+                loader: null,
+                cameraIndex: 1
             };
         },
 
         created() {
             //removeCookie(KEY_ALLOW_COOKIE);
+            this.cameraIndex = this.$route.params.id;
             this.socketConnection();
         },
 
@@ -97,29 +95,7 @@
                         setCookie(KEY_CAMERA_MOBILE, ref.mobile);
                         console.log("Set cookie is " + ref.mobile);
                         ref.$router.push({
-                            path: '/live/camera',
-                        });
-                    } else if(json.status == 1) {
-                        let info = json.info;
-                        setCookie(KEY_MANAGE_ID, info.id);
-                        setCookie(KEY_MANAGE_PORT, info.port);
-                        let camera_arr = [];
-                        if(info.camera1 != '') {
-                            camera_arr.push(info.camera1);
-                        }
-                        if(info.camera2 != '') {
-                            camera_arr.push(info.camera2);
-                        }
-                        if(info.camera3 != '') {
-                            camera_arr.push(info.camera3);
-                        }
-
-
-                        setCookie(KEY_MANAGE_CAMERA, camera_arr);
-                        setCookie(KEY_MANAGE_NAME, info.name);
-
-                        ref.$router.push({
-                            path: '/live/manage',
+                            path: '/live/camera/' + ref.cameraIndex,
                         });
                     }
                 };
@@ -166,7 +142,8 @@
                     body: {
                         mobile: this.mobile,
                         code: this.code,
-                        type: this.type
+                        type: this.type,
+                        id: this.cameraIndex
                     }
                 }));
                 this.createLoader();

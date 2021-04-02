@@ -76,6 +76,10 @@
                   packets.shift();
                 }
                 packets.push(e.data.payload.buffer);
+                self.postMessage({
+                  type: 'data',
+                  payload: e.data.payload.buffer // Serialized Uint8Array
+                });
                 //packets[pos_i++] = e.data.payload.buffer;
                 //pos_i %= packets.length;
                 break;

@@ -23,9 +23,9 @@
     </b-navbar>
 
     <div class="canvas-container">
-      <canvas id="_canvas" ref="canvas"></canvas><br>
+      <canvas id="_canvas" ref="canvas" ></canvas><br>
     </div>
-    <video id="_video" ref="video" muted hidden></video><br>
+    <video id="_video" ref="video" muted autoplay playsInline hidden></video><br>
     <audio id="_audio" ref="audio" hidden></audio>
   </div>
 </template>
@@ -73,6 +73,7 @@
 
         created() {
             this.mobile = getCookie(KEY_CAMERA_MOBILE);
+            this.cameraIndex = this.$route.params.id;
             this.port = getCookie(KEY_CAMERA_PORT);
             this.ws0 = Core.worker();
             this.ws1 = Core.worker();
@@ -125,6 +126,7 @@
                 this.setCamera(this.currentType);
             },
             setCamera(type) {
+                this.channelStop();
                 let ref = this;
                 navigator.mediaDevices.getUserMedia({
                     audio: {
@@ -175,6 +177,7 @@
                 if(this.currentStream) {
                     this.stopMediaTracks(this.currentStream);
                 }
+
                 if(this.currentType == 'user'){
                     this.currentType = 'environment';
                 } else {
@@ -183,30 +186,26 @@
                 this.setCamera(this.currentType);
             },
             showChannelList(list) {
-                console.log(list);
+
                 list.forEach(e => {
-                    let mobiles = JSON.parse(e.mobiles);
-                    console.log(mobiles.length);
-                    console.log(this.mobiles);
-                    console.log(e.port);
-                    console.log(this.port);
-                    console.log(this.mobile);
-
                     if(e.port == this.port) {
-                        for(var i = 0; i < mobiles.length; i ++) {
-                            if(mobiles[i] == this.mobile) {
-                                this.ws1.threadId = e.threadId;
-                                console.log("Connected");
-                                //Core.show_alert(_alert, 'info', 'connected');
-                                Core.channel_connect(e);
-                                this.cameraIndex = i + 1;
-                                console.log(this.cameraIndex);
+                        console.log(e);
+                        this.ws1.threadId = e.threadId;
+                        Core.channel_connect(e);
 
-                                this.videoIndex = e.video;
-                                this.audioIndex = e.audio;
-                                return;
-                            }
-                        }
+
+                        this.videoIndex = e.video;
+                        this.audioIndex = e.audio;
+                        return ;
+                        // for(var i = 0; i < mobiles.length; i ++) {
+                        //     if(mobiles[i] == this.mobile) {
+                        //         this.ws1.threadId = e.threadId;
+                        //         console.log("Connected");
+                        //         //Core.show_alert(_alert, 'info', 'connected');
+                        //
+                        //         return;
+                        //     }
+                        // }
                     }
                 });
             },
@@ -216,12 +215,15 @@
                 this.ws0.onmessage = e => {
                     switch (e.data.type) {
                         case 'connect':
+                            console.info("Connected Main");
+                            console.log(e);
                             if (e.data.result == 'close') {
                                 //Core.show_alert(_alert, 'danger', 'main closed');
                             } else if (e.data.result == 'error') {
                                 //Core.show_alert(_alert, 'danger', e.data.error);
                             } else {
                                 ref.channelOpen();
+
                             }
                             break;
                         case 'config':
@@ -229,8 +231,9 @@
                             break;
                         case 'opened':
                             console.info('opened', e.data.info.threadId);
+
                             this.ws1.threadId = e.data.info.threadId;
-                            Core.channel_connect(e.data.info);
+
                             //Core.show_alert(_alert, 'info', 'connect to ' + e.data.info.origin);
                             break;
                         case 'closed':
@@ -267,6 +270,7 @@
                             break;
                         case 'open':
                             console.log('ws1 opened');
+
                             ref.channelStart();
                             break;
                         default:
@@ -308,6 +312,7 @@
                 Audio.encode(e.inputBuffer);
             },
             grab() {
+
                 let _canvas = this.$refs["canvas"];
                 let _video = this.$refs["video"];
                 let window_height = window.innerHeight - 32 - 90;
@@ -324,7 +329,6 @@
                 _canvas.width = this.videoSize.w * scale;
                 _canvas.height = this.videoSize.h * scale;
                 const canvasCtx = _canvas.getContext('2d');
-
                 canvasCtx.drawImage(_video, 0, 0, this.videoSize.w * scale, this.videoSize.h * scale);
                 //
                 //todo: another image processes

@@ -68,16 +68,16 @@
     </b-modal>
 
     <b-modal ref="audio-modal" hide-footer title="Set Audio">
-    <div class="form-group d-flex-1 align-items-center">
-      <select class="form-control" id="_music" v-model="audio">
-        <option v-for="option in musicOptions" v-bind:value="option.value" :key="option.value">
-          {{ option.text }}
-        </option>
-      </select>
+      <div class="form-group d-flex-1 align-items-center">
+        <select class="form-control" id="_music" v-model="audio">
+          <option v-for="option in musicOptions" v-bind:value="option.value" :key="option.value">
+            {{ option.text }}
+          </option>
+        </select>
 
-    </div>
-    <b-button class="mt-2"  @click="updateAudio()">Submit</b-button>
-  </b-modal>
+      </div>
+      <b-button class="mt-2"  @click="updateAudio()">Submit</b-button>
+    </b-modal>
 
     <b-modal ref="anim-modal" hide-footer title="Set Anim">
       <div class="form-group d-flex-1 align-items-center">
@@ -207,11 +207,7 @@
             this.id = getCookie(KEY_MANAGE_ID);
             this.name = getCookie(KEY_MANAGE_NAME);
 
-            if(this.cameras.length == 0) {
-                this.isSetNumber = false;
-            } else {
-                this.isSetNumber = true;
-            }
+            this.isSetNumber = true;
             this.ws0 = Core.worker();
             this.ws1 = Core.worker();
             this.mjpeg = Video.worker();
@@ -507,15 +503,15 @@
                             console.log(e.data);
                             switch (e.data.method) {
                                 case 'add':
-                                  let json = e.data.content;
-                                  const date = new Date(json.utc);
-                                  const timeStr = "[" + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "]";
-                                  json.time = timeStr;
-                                  this.messages.push(json);
-                                  if(this.messages.length > 300) {
-                                      this.messages.shift();
-                                  }
-                                  break;
+                                    let json = e.data.content;
+                                    const date = new Date(json.utc);
+                                    const timeStr = "[" + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "]";
+                                    json.time = timeStr;
+                                    this.messages.push(json);
+                                    if(this.messages.length > 300) {
+                                        this.messages.shift();
+                                    }
+                                    break;
                                 case 'remove':
                                     for(var i = this.messages.length - 1; i >= 0 ; i --) {
                                         if(this.messages[i].user.mobile == e.data.content.mobile) {

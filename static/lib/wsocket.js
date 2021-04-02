@@ -71,7 +71,7 @@
                     threadId: threadId
                 }));
             } else connectionError('can not fetch start');
-        } else if (code > 0) {
+        } else if (code >= 0) {
             fetch_running = true;
             channelCode = code;
             thread = threadId
@@ -122,6 +122,7 @@
             const view = new DataView(buffer);
             const data = new Uint8Array(buffer);
             let offset = 0;
+
 
             while (offset < buffer.byteLength) {
                 const key = view.getUint32(offset);

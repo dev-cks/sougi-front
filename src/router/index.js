@@ -9,7 +9,6 @@ import Incense from '@/view/Incense'
 import Inquiry from '@/view/Inquiry'
 import InquirySend from '@/view/InquirySend'
 import Line from '@/view/Line'
-import Login from '@/view/Login'
 import LoginCode from '@/view/LoginCode'
 import Notation from '@/view/Notation'
 import Privacy from '@/view/Privacy'
@@ -18,7 +17,8 @@ import Register from '@/view/Register'
 import RegisterConfirm from '@/view/RegisterConfirm'
 import Terms from '@/view/Terms'
 import NotFound from '@/view/NotFound';
-import LiveLogin from '@/view/Live/Login';
+import LiveLoginManage from '@/view/Live/LoginManage';
+import LiveLoginCamera from '@/view/Live/LoginCamera';
 import LiveManage from '@/view/Live/Manage';
 import LiveCamera from '@/view/Live/Camera';
 import LiveClient from '@/view/Live/Client';
@@ -96,15 +96,19 @@ const router = new Router({
       component: Condolence
     },
     {
-      path: '/live/login',
-      component: LiveLogin
+      path: '/live/login/manage',
+      component: LiveLoginManage
+    },
+    {
+      path: '/live/login/camera/:id',
+      component: LiveLoginCamera
     },
     {
       path: '/live/manage',
       component: LiveManage
     },
     {
-      path: '/live/camera',
+      path: '/live/camera/:id',
       component: LiveCamera
     },
     {
